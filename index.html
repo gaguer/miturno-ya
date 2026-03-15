@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MiTurnoYa</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; background: #f5f5f5; color: #1a1a1a; }
+.app { max-width: 480px; margin: 0 auto; padding: 1rem; }
+.header { background: #7F77DD; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; color: white; display: flex; justify-content: space-between; align-items: center; }
+.header h1 { font-size: 20px; font-weight: 600; }
+.header span { font-size: 12px; opacity: 0.85; }
+.tab-bar { display: flex; gap: 8px; margin-bottom: 1rem; }
+.tab { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 8px; font-size: 12px; cursor: pointer; background: white; color: #666; text-align: center; }
+.tab.active { background: #EEEDFE; border-color: #7F77DD; color: #3C3489; font-weight: 600; }
+.section { display: none; }
+.section.active { display: block; }
+.card { background: white; border: 1px solid #eee; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 12px; }
+.card h3 { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
+.form-group { margin-bottom: 12px; }
+.form-group label { font-size: 13px; color: #666; display: block; margin-bottom: 4px; }
+.form-group input, .form-group select { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: white; }
+.btn { width: 100%; padding: 12px; background: #7F77DD; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 4px; }
+.btn:hover { background: #534AB7; }
+.btn-outline { background: transparent; border: 1px solid #ddd; color: #333; margin-top: 8px; }
+.metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem; }
+.metric { background: #f8f8f8; border-radius: 8px; padding: 1rem; }
+.metric .label { font-size: 12px; color: #888; margin-bottom: 4px; }
+.metric .value { font-size: 22px; font-weight: 600; }
+.turno-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+.turno-item:last-child { border-bottom: none; }
+.badge { display: inline-block; font-size: 11px; padding: 3px 10px; border-radius: 6px; font-weight: 600; }
+.badge-green { background: #EAF3DE; color: #27500A; }
+.badge-amber { background: #FAEEDA; color: #633806; }
+.badge-purple { background: #EEEDFE; color: #3C3489; }
+.alert { padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 14px; text-align: center; }
+.alert-success { background: #EAF3DE; color: #27500A; border: 1px solid #97C459; }
+.alert-error { background: #FCEBEB; color: #501313; border: 1px solid #F09595; }
+.loading { text-align: center; color: #888; padding: 2rem; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div>
+      <h1>MiTurnoYa</h1>
+      <span>Sistema de turnos inteligente</span>
+    </div>
+    <span style="font-size: 28px;">📅</span>
+  </div>
+
+  <div class="tab-bar">
+    <div class="tab active" onclick="showTab('cliente', this)">Reservar</div>
+    <div class="tab" onclick="showTab('admin', this)">Negocio</div>
+    <div class="tab" onclick="showTab('servicios', this)">Servicios</div>
+  </div>
+
+  <!-- CLIENTE -->
+  <div id="tab-cliente" class="section active">
+    <div class="card">
+      <h3>Agendá tu turno</h3>
+      <div id="alert-cliente"></div>
+      <div class="form-group">
+        <label>Tu nombre completo</label>
+        <input type="text" id="nombre" placeholder="Ej: María García" />
+      </div>
+      <div class="form-group">
+        <label>Tu WhatsApp</label>
+        <input type="tel" id="telefono" placeholder="Ej: 3512345678" />
+      </div>
+      <div class="form-group">
+        <label>Servicio</label>
+        <select id="servicio">
+          <option value="">Cargando servicios...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Fecha</label>
+        <input type="date" id="fecha" />
+      </div>
+      <div class="form-group">
+        <label>Horario</label>
+        <select id="horario">
+          <option value="">Seleccioná un horario...</option>
+          <option>09:00</option><option>09:30</option><option>10:00</option>
+          <option>10:30</option><option>11:00</option><option>11:30</option>
+          <option>14:00</option><option>14:30</option><option>15:00</option>
+          <option>15:30</option><option>16:00</option><option>17:00</option>
+        </select>
+      </div>
+      <button class="btn" onclick="reservarTurno()">Confirmar turno</button>
+    </div>
+  </div>
+
+  <!-- ADMIN -->
+  <div id="tab-admin" class="section">
+    <div class="metric-grid">
+      <div class="metric"><div class="label">Turnos hoy</div><div class="value" id="count-hoy">-</div></div>
+      <div class="metric"><div class="label">Esta semana</div><div class="value" id="count-semana">-</div></div>
+    </div>
+    <div class="card">
+      <h3>Turnos de hoy</h3>
+      <div id="lista-turnos"><div class="loading">Cargando...</div></div>
+    </div>
+  </div>
+
+  <!-- SERVICIOS -->
+  <div id="tab-servicios" class="section">
+    <div id="lista-servicios"><div class="loading">Cargando...</div></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://qivbrddsmamxsszacjhv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Axj3TD_KZyVj6Aa1_8JJlg_BILyCNFS';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+function showTab(tab, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  el.classList.add('active');
+  if (tab === 'admin') cargarTurnos();
+  if (tab === 'servicios') cargarServiciosPanel();
+}
+
+async function cargarServicios() {
+  const { data } = await db.from('servicios').select('*').eq('activo', true);
+  const sel = document.getElementById('servicio');
+  if (data && data.length) {
+    sel.innerHTML = '<option value="">Seleccioná un servicio...</option>' +
+      data.map(s => `<option value="${s.id}">${s.nombre} — $${Number(s.precio).toLocaleString('es-AR')} | ${s.duracion_minutos} min</option>`).join('');
+  }
+}
+
+async function cargarServiciosPanel() {
+  const { data } = await db.from('servicios').select('*').eq('activo', true);
+  const cont = document.getElementById('lista-servicios');
+  if (!data || !data.length) { cont.innerHTML = '<p style="text-align:center;color:#888;padding:2rem">No hay servicios cargados</p>'; return; }
+  cont.innerHTML = data.map(s => `
+    <div class="card" style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-weight:600;font-size:15px">${s.nombre}</div>
+          <div style="font-size:13px;color:#888;margin-top:2px">${s.descripcion || ''}</div>
+          <div style="font-size:12px;color:#aaa;margin-top:4px">Duración: ${s.duracion_minutos} min</div>
+        </div>
+        <span class="badge badge-purple" style="font-size:14px;padding:6px 12px">$${Number(s.precio).toLocaleString('es-AR')}</span>
+      </div>
+    </div>`).join('');
+}
+
+async function cargarTurnos() {
+  const hoy = new Date().toISOString().split('T')[0];
+  const inicio = hoy + 'T00:00:00';
+  const fin = hoy + 'T23:59:59';
+  const { data } = await db.from('turnos').select('*, servicios(nombre, precio)').gte('fecha_hora', inicio).lte('fecha_hora', fin).order('fecha_hora');
+  const cont = document.getElementById('lista-turnos');
+  document.getElementById('count-hoy').textContent = data ? data.length : 0;
+  if (!data || !data.length) { cont.innerHTML = '<p style="text-align:center;color:#888;padding:1rem">Sin turnos para hoy</p>'; return; }
+  cont.innerHTML = data.map(t => {
+    const hora = new Date(t.fecha_hora).toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'});
+    return `<div class="turno-item">
+      <div>
+        <div style="font-size:14px;font-weight:600">${t.cliente_nombre}</div>
+        <div style="font-size:12px;color:#888">${t.servicios?.nombre || ''}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:13px;font-weight:600">${hora}</div>
+        <span class="badge badge-green">Confirmado</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  const semana = new Date(); semana.setDate(semana.getDate() - 7);
+  const { count } = await db.from('turnos').select('*', {count:'exact',head:true}).gte('fecha_hora', semana.toISOString());
+  document.getElementById('count-semana').textContent = count || 0;
+}
+
+async function reservarTurno() {
+  const nombre = document.getElementById('nombre').value.trim();
+  const telefono = document.getElementById('telefono').value.trim();
+  const servicio_id = document.getElementById('servicio').value;
+  const fecha = document.getElementById('fecha').value;
+  const horario = document.getElementById('horario').value;
+  const alerta = document.getElementById('alert-cliente');
+
+  if (!nombre || !telefono || !servicio_id || !fecha || !horario) {
+    alerta.innerHTML = '<div class="alert alert-error">Completá todos los campos.</div>';
+    return;
+  }
+
+  const fecha_hora = fecha + 'T' + horario + ':00';
+  const { error } = await db.from('turnos').insert([{ cliente_nombre: nombre, cliente_telefono: telefono, servicio_id, fecha_hora, estado: 'confirmado' }]);
+
+  if (error) {
+    alerta.innerHTML = '<div class="alert alert-error">Error al guardar. Intentá de nuevo.</div>';
+  } else {
+    alerta.innerHTML = '<div class="alert alert-success">✓ ¡Turno reservado con éxito! Te esperamos.</div>';
+    document.getElementById('nombre').value = '';
+    document.getElementById('telefono').value = '';
+    document.getElementById('servicio').value = '';
+    document.getElementById('fecha').value = '';
+    document.getElementById('horario').value = '';
+    setTimeout(() => alerta.innerHTML = '', 4000);
+  }
+}
+
+cargarServicios();
+</script>
+</body>
+</html>
