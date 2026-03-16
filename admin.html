@@ -232,7 +232,20 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
       </div>
     </div>
   </div>
-  
+  <div id="sec-equipo" class="section">
+    <div class="card">
+      <h3>Equipo activo</h3>
+      <div id="lista-equipo"><div style="text-align:center;color:#aaa;padding:1rem;font-size:14px">Cargando...</div></div>
+    </div>
+    <div class="card">
+      <h3>Agregar empleado</h3>
+      <div id="alert-equipo"></div>
+      <div class="form-group"><label>Nombre</label><input type="text" id="eq-nombre" placeholder="Ej: Valentina" /></div>
+      <div class="form-group"><label>Teléfono</label><input type="tel" id="eq-tel" placeholder="Ej: 3512345678" /></div>
+      <div class="form-group"><label>Email</label><input type="email" id="eq-email" placeholder="Ej: vale@salon.com" /></div>
+      <button class="btn" onclick="agregarEmpleado()">Agregar empleado</button>
+    </div>
+  </div>
   <div id="sec-stock" class="section">
     <div class="stock-filtros">
       <button class="filtro-btn active" onclick="filtrarStock('todos', this)">Todos</button>
@@ -277,16 +290,15 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
     </div>
   </div>
 
-  <div class="bottom-nav" id="bottom-nav">
+ <div class="bottom-nav" id="bottom-nav">
     <div class="nav-row">
       <div class="nav-item active" id="nav-agenda" onclick="showNav('agenda')"><span class="nav-icon">📅</span>Agenda</div>
       <div class="nav-item" id="nav-clientes" onclick="showNav('clientes')"><span class="nav-icon">👥</span>Clientes</div>
       <div class="nav-item" id="nav-stats" onclick="showNav('stats')"><span class="nav-icon">📊</span>Stats</div>
-      <div class="nav-item" id="nav-stock" onclick="showNav('stock')"><span class="nav-icon">📦</span>Stock</div>
+      <div class="nav-item" id="nav-equipo" onclick="showNav('equipo')"><span class="nav-icon">👩‍💼</span>Equipo</div>
       <div class="nav-item" id="nav-ia" onclick="showNav('ia')"><span class="nav-icon">🤖</span>IA</div>
     </div>
   </div>
-</div>
 
 <script>
 const SUPABASE_URL = 'https://qivbrddsmamxsszacjhv.supabase.co';
@@ -342,6 +354,7 @@ function showNav(sec) {
   if(sec==='stats') cargarStats();
   if(sec==='servicios') cargarServiciosPanel();
   if(sec==='stock') cargarStock();
+  if(sec==='equipo') cargarEquipo();
   if(sec==='ia') {};
 }
 
@@ -663,6 +676,45 @@ function copiarMensaje() {
     document.getElementById('copy-ok').style.display = 'block';
     setTimeout(() => document.getElementById('copy-ok').style.display = 'none', 3000);
   });
+}
+  async function cargarEquipo() {
+  const {data} = await db.from('empleados').select('*').order('nombre');
+  const cont = document.getElementById('lista-equipo');
+  if(!data||!data.length){cont.innerHTML='<p style="text-align:center;color:#aaa;padding:1rem;font-size:14px">Sin empleados cargados</p>';return;}
+  cont.innerHTML = data.map(e => `
+    <div class="cliente-item">
+      <div class="cliente-avatar">${e.nombre.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase()}</div>
+      <div class="cliente-info">
+        <div class="cliente-nombre">${e.nombre}</div>
+        <div class="cliente-datos">${e.telefono||''} ${e.email?'· '+e.email:''}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+        <span class="cliente-badge" style="${e.activo?'':'background:#FCEBEB;color:#A32D2D'}">${e.activo?'Activo':'Inactivo'}</span>
+        <button class="btn btn-sm ${e.activo?'btn-danger':'btn-green'}" onclick="toggleEmpleado('${e.id}',${e.activo})">${e.activo?'Desactivar':'Activar'}</button>
+      </div>
+    </div>`).join('');
+}
+
+async function agregarEmpleado() {
+  const nombre = document.getElementById('eq-nombre').value.trim();
+  const tel = document.getElementById('eq-tel').value.trim();
+  const email = document.getElementById('eq-email').value.trim();
+  const alerta = document.getElementById('alert-equipo');
+  if(!nombre){alerta.innerHTML='<div class="alert alert-error">El nombre es obligatorio.</div>';return;}
+  const {error} = await db.from('empleados').insert([{nombre, telefono:tel, email, activo:true}]);
+  if(error){alerta.innerHTML='<div class="alert alert-error">Error al guardar.</div>';return;}
+  alerta.innerHTML='<div class="alert alert-success">✓ Empleado agregado.</div>';
+  document.getElementById('eq-nombre').value='';
+  document.getElementById('eq-tel').value='';
+  document.getElementById('eq-email').value='';
+  setTimeout(()=>{alerta.innerHTML='';cargarEquipo();},1500);
+}
+
+async function toggleEmpleado(id, activo) {
+  const msg = activo ? '¿Desactivar este empleado? No aparecerá para nuevos turnos.' : '¿Activar este empleado?';
+  if(!confirm(msg)) return;
+  await db.from('empleados').update({activo:!activo}).eq('id',id);
+  cargarEquipo();
 }
 </script>
 </body>
