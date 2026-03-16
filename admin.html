@@ -348,13 +348,17 @@ function showNav(sec) {
 async function cargarTurnos() {
   const inicio=new Date(fechaActiva); inicio.setHours(0,0,0,0);
   const fin=new Date(fechaActiva); fin.setHours(23,59,59,999);
-  const {data} = await db.from('turnos').select('*, servicios(nombre,precio)').gte('fecha_hora',inicio.toISOString()).lte('fecha_hora',fin.toISOString()).order('fecha_hora');
+  const {data} = await db.from('turnos').select('*, servicios(nombre,precio,duracion_minutos)').gte('fecha_hora',inicio.toISOString()).lte('fecha_hora',fin.toISOString()).order('fecha_hora');
   const cont=document.getElementById('lista-turnos');
   if(!data||!data.length){cont.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><p>Sin turnos para este día</p></div>';return;}
   cont.innerHTML=data.map(t=>{
-    const dt=new Date(t.fecha_hora), h=dt.getHours().toString().padStart(2,'0'), m=dt.getMinutes().toString().padStart(2,'0'), estado=t.estado||'confirmado';
+    const dt=new Date(t.fecha_hora);
+    const horaInicio = dt.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit', timeZone:'America/Argentina/Buenos_Aires'});
+    const dtFin = new Date(dt.getTime() + (t.servicios?.duracion_minutos||30)*60000);
+    const horaFin = dtFin.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit', timeZone:'America/Argentina/Buenos_Aires'});
+    const estado=t.estado||'confirmado';
     return `<div class="turno-card">
-      <div class="turno-hora"><div class="h">${h}</div><div class="m">${m}</div></div>
+      <div class="turno-hora"><div class="h" style="font-size:13px">${horaInicio}</div><div class="m">→ ${horaFin}</div></div>
       <div class="turno-divider color-${estado}"></div>
       <div class="turno-info">
         <div class="turno-nombre">${t.cliente_nombre}</div>
