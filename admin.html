@@ -232,7 +232,7 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
       </div>
     </div>
   </div>
-  <div id="sec-equipo" class="section">
+<div id="sec-equipo" class="section">
     <div class="card">
       <h3>Equipo activo</h3>
       <div id="lista-equipo"><div style="text-align:center;color:#aaa;padding:1rem;font-size:14px">Cargando...</div></div>
@@ -244,6 +244,20 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
       <div class="form-group"><label>Teléfono</label><input type="tel" id="eq-tel" placeholder="Ej: 3512345678" /></div>
       <div class="form-group"><label>Email</label><input type="email" id="eq-email" placeholder="Ej: vale@salon.com" /></div>
       <button class="btn" onclick="agregarEmpleado()">Agregar empleado</button>
+    </div>
+    <div class="card">
+      <h3>🚫 Días bloqueados</h3>
+      <p style="font-size:13px;color:#888;margin-bottom:14px">Bloqueá feriados, vacaciones o días sin atención.</p>
+      <div id="lista-bloqueados" style="margin-bottom:14px"></div>
+      <div id="alert-bloqueo"></div>
+      <div class="form-group"><label>Fecha a bloquear</label><input type="date" id="bl-fecha" /></div>
+      <div class="form-group"><label>Motivo</label><input type="text" id="bl-motivo" placeholder="Ej: Feriado nacional, Vacaciones" /></div>
+      <div class="form-group"><label>¿Para quién?</label>
+        <select id="bl-empleado">
+          <option value="">Todo el negocio</option>
+        </select>
+      </div>
+      <button class="btn" onclick="agregarBloqueo()">Bloquear día</button>
     </div>
   </div>
   <div id="sec-stock" class="section">
@@ -354,7 +368,7 @@ function showNav(sec) {
   if(sec==='stats') cargarStats();
   if(sec==='servicios') cargarServiciosPanel();
   if(sec==='stock') cargarStock();
-  if(sec==='equipo') cargarEquipo();
+  if(sec==='equipo') { cargarEquipo(); cargarBloqueados(); }
   if(sec==='ia') {};
 }
 
@@ -677,22 +691,49 @@ function copiarMensaje() {
     setTimeout(() => document.getElementById('copy-ok').style.display = 'none', 3000);
   });
 }
-  async function cargarEquipo() {
+const DIAS = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+
+async function cargarEquipo() {
   const {data} = await db.from('empleados').select('*').order('nombre');
   const cont = document.getElementById('lista-equipo');
   if(!data||!data.length){cont.innerHTML='<p style="text-align:center;color:#aaa;padding:1rem;font-size:14px">Sin empleados cargados</p>';return;}
-  cont.innerHTML = data.map(e => `
-    <div class="cliente-item">
-      <div class="cliente-avatar">${e.nombre.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase()}</div>
-      <div class="cliente-info">
-        <div class="cliente-nombre">${e.nombre}</div>
-        <div class="cliente-datos">${e.telefono||''} ${e.email?'· '+e.email:''}</div>
+  
+  let html = '';
+  for(const e of data) {
+    const {data:horarios} = await db.from('empleado_horarios').select('*').eq('empleado_id',e.id);
+    const diasActivos = horarios ? horarios.filter(h=>h.activo).map(h=>h.dia_semana) : [];
+    html += `<div style="border-bottom:1px solid #f5f5f5;padding:12px 0;">
+      <div class="cliente-item" style="padding:0;border:none;margin-bottom:10px">
+        <div class="cliente-avatar">${e.nombre.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase()}</div>
+        <div class="cliente-info">
+          <div class="cliente-nombre">${e.nombre}</div>
+          <div class="cliente-datos">${e.telefono||''} ${e.email?'· '+e.email:''}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+          <span class="cliente-badge" style="${e.activo?'':'background:#FCEBEB;color:#A32D2D'}">${e.activo?'Activo':'Inactivo'}</span>
+          <button class="btn btn-sm ${e.activo?'btn-danger':'btn-green'}" onclick="toggleEmpleado('${e.id}',${e.activo})">${e.activo?'Desactivar':'Activar'}</button>
+        </div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
-        <span class="cliente-badge" style="${e.activo?'':'background:#FCEBEB;color:#A32D2D'}">${e.activo?'Activo':'Inactivo'}</span>
-        <button class="btn btn-sm ${e.activo?'btn-danger':'btn-green'}" onclick="toggleEmpleado('${e.id}',${e.activo})">${e.activo?'Desactivar':'Activar'}</button>
+      <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Días que trabaja</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        ${DIAS.map((d,i) => {
+          const activo = diasActivos.includes(i);
+          const hId = horarios?.find(h=>h.dia_semana===i)?.id;
+          return `<div onclick="toggleDiaEmpleado('${e.id}',${i},'${hId||''}',${activo})" style="padding:4px 8px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;background:${activo?'#7F77DD':'#f0f0f5'};color:${activo?'white':'#aaa'}">${d.slice(0,2)}</div>`;
+        }).join('')}
       </div>
-    </div>`).join('');
+    </div>`;
+  }
+  cont.innerHTML = html;
+}
+
+async function toggleDiaEmpleado(empleadoId, dia, horarioId, activo) {
+  if(horarioId && horarioId !== 'undefined') {
+    await db.from('empleado_horarios').update({activo:!activo}).eq('id',horarioId);
+  } else {
+    await db.from('empleado_horarios').insert([{empleado_id:empleadoId, dia_semana:dia, activo:true}]);
+  }
+  cargarEquipo();
 }
 
 async function agregarEmpleado() {
@@ -715,6 +756,46 @@ async function toggleEmpleado(id, activo) {
   if(!confirm(msg)) return;
   await db.from('empleados').update({activo:!activo}).eq('id',id);
   cargarEquipo();
+}
+  async function cargarBloqueados() {
+  const {data} = await db.from('dias_bloqueados').select('*, empleados(nombre)').order('fecha');
+  const cont = document.getElementById('lista-bloqueados');
+  const hoy = new Date().toISOString().split('T')[0];
+  const futuros = data ? data.filter(d=>d.fecha>=hoy) : [];
+  if(!futuros.length){cont.innerHTML='<p style="font-size:13px;color:#aaa">Sin días bloqueados próximos</p>';return;}
+  cont.innerHTML = futuros.map(d=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f5f5f5;">
+      <div>
+        <div style="font-size:14px;font-weight:700">${new Date(d.fecha+'T12:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}</div>
+        <div style="font-size:12px;color:#aaa">${d.motivo||'Sin motivo'} ${d.empleados?'· Solo '+d.empleados.nombre:'· Todo el negocio'}</div>
+      </div>
+      <button class="btn btn-sm btn-danger" onclick="eliminarBloqueo('${d.id}')">✕</button>
+    </div>`).join('');
+
+  // Cargar empleados en selector
+  const {data:emps} = await db.from('empleados').select('*').eq('activo',true);
+  const sel = document.getElementById('bl-empleado');
+  sel.innerHTML = '<option value="">Todo el negocio</option>' + (emps||[]).map(e=>`<option value="${e.id}">${e.nombre}</option>`).join('');
+}
+
+async function agregarBloqueo() {
+  const fecha = document.getElementById('bl-fecha').value;
+  const motivo = document.getElementById('bl-motivo').value.trim();
+  const empleado_id = document.getElementById('bl-empleado').value || null;
+  const alerta = document.getElementById('alert-bloqueo');
+  if(!fecha){alerta.innerHTML='<div class="alert alert-error">Seleccioná una fecha.</div>';return;}
+  const {error} = await db.from('dias_bloqueados').insert([{fecha, motivo, empleado_id}]);
+  if(error){alerta.innerHTML='<div class="alert alert-error">Error al guardar.</div>';return;}
+  alerta.innerHTML='<div class="alert alert-success">✓ Día bloqueado correctamente.</div>';
+  document.getElementById('bl-fecha').value='';
+  document.getElementById('bl-motivo').value='';
+  setTimeout(()=>{alerta.innerHTML='';cargarBloqueados();},1500);
+}
+
+async function eliminarBloqueo(id) {
+  if(!confirm('¿Eliminar este bloqueo?')) return;
+  await db.from('dias_bloqueados').delete().eq('id',id);
+  cargarBloqueados();
 }
 </script>
 </body>
