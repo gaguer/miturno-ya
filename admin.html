@@ -127,8 +127,16 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
     <div id="alert-login"></div>
     <div class="form-group"><label>Usuario</label><input type="text" id="login-user" placeholder="admin" /></div>
     <div class="form-group"><label>Contraseña</label><input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" /></div>
-    <button class="btn" onclick="doLogin()">Ingresar</button>
-  </div>
+    <div class="form-group" style="margin-top:14px">
+        <label>Número de WhatsApp del negocio</label>
+        <input type="tel" id="config-whatsapp" placeholder="Ej: 5493472557025 (sin + ni espacios)" />
+      </div>
+      <div class="form-group">
+        <label>Mensaje predeterminado para clientes</label>
+        <input type="text" id="config-wamensaje" placeholder="Ej: Hola! Quiero consultar sobre turnos" />
+      </div>
+      <button class="btn" onclick="guardarConfig()">Guardar configuración</button>
+    </div>
 </div>
 
 <div class="app" id="admin-app" style="display:none">
@@ -767,9 +775,10 @@ function setTipoHorario(partido) {
   document.getElementById('horario-partido-fields').style.display = partido ? 'block' : 'none';
 }
 function renderConfigDias() {
-  document.getElementById('config-dias').innerHTML = DIAS_NOMBRES.map((d,i) => `
-    <div onclick="toggleDiaConfig(${i})" style="padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;background:${diasAbierto.includes(i)?'#7F77DD':'#f0f0f5'};color:${diasAbierto.includes(i)?'white':'#aaa'}">${d.slice(0,2)}</div>
-  `).join('');
+document.getElementById('config-whatsapp').value = cfg.whatsapp_numero || '';
+  document.getElementById('config-wamensaje').value = cfg.whatsapp_mensaje || 'Hola! Me gustaría consultar sobre los turnos disponibles.';
+  renderConfigDias();
+  cargarHorariosEmpleados();
 }
 function toggleDiaConfig(dia) {
   if(diasAbierto.includes(dia)) diasAbierto = diasAbierto.filter(d=>d!==dia);
@@ -790,7 +799,9 @@ async function guardarConfig() {
     {clave:'hora_inicio_2', valor:inicio2},
     {clave:'hora_fin_2', valor:fin2},
     {clave:'horario_partido', valor:esHorarioPartido.toString()},
-    {clave:'intervalo_minutos', valor:intervalo}
+    {clave:'intervalo_minutos', valor:intervalo},
+    {clave:'whatsapp_numero', valor:document.getElementById('config-whatsapp').value.trim()},
+    {clave:'whatsapp_mensaje', valor:document.getElementById('config-wamensaje').value.trim()}
   ];
   for(const u of updates) {
     await db.from('negocio_config').upsert({clave:u.clave, valor:u.valor},{onConflict:'clave'});
