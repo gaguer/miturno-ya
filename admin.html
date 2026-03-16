@@ -5,12 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MiTurnoYa — Admin</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; }
 .app { max-width: 520px; margin: 0 auto; padding: 0 0 80px; }
-
-/* LOGIN */
 .login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
 .login-card { background: white; border-radius: 16px; padding: 2rem; width: 100%; max-width: 380px; }
 .login-logo { text-align: center; margin-bottom: 1.5rem; }
@@ -18,25 +17,25 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
 .login-logo p { font-size: 13px; color: #aaa; margin-top: 4px; }
 .form-group { margin-bottom: 14px; }
 .form-group label { font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 5px; }
-.form-group input { width: 100%; padding: 12px 14px; border: 1.5px solid #eee; border-radius: 10px; font-size: 15px; background: #fafafa; color: #1a1a1a; }
-.form-group input:focus { border-color: #7F77DD; outline: none; background: white; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 14px; border: 1.5px solid #eee; border-radius: 10px; font-size: 15px; background: #fafafa; color: #1a1a1a; transition: border-color 0.2s; }
+.form-group input:focus, .form-group select:focus { border-color: #7F77DD; outline: none; background: white; }
 .btn { width: 100%; padding: 13px; background: #7F77DD; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; }
 .btn:hover { background: #534AB7; }
+.btn:active { transform: scale(0.98); }
 .btn-sm { width: auto; padding: 6px 14px; font-size: 12px; border-radius: 8px; }
 .btn-outline { background: transparent; border: 1.5px solid #7F77DD; color: #7F77DD; }
 .btn-danger { background: #E24B4A; }
 .btn-danger:hover { background: #A32D2D; }
+.btn-green { background: #639922; }
+.btn-green:hover { background: #3B6D11; }
 .alert { padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 14px; text-align: center; }
 .alert-error { background: #FCEBEB; color: #501313; }
-
-/* HEADER ADMIN */
+.alert-success { background: #EAF3DE; color: #27500A; }
 .header { background: #7F77DD; padding: 1rem 1.25rem 0; display: none; }
 .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .header h1 { font-size: 18px; font-weight: 800; color: white; }
 .header-sub { font-size: 12px; color: rgba(255,255,255,0.8); }
 .logout-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; }
-
-/* WEEK STRIP */
 .week-strip { background: #6B63CC; display: flex; padding: 8px 1rem; gap: 4px; }
 .date-nav { display: flex; align-items: center; gap: 8px; padding-bottom: 12px; }
 .date-nav button { background: rgba(255,255,255,0.2); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; font-size: 16px; cursor: pointer; }
@@ -46,22 +45,15 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
 .day-pill .dd { font-size: 15px; font-weight: 700; color: white; }
 .day-pill.active { background: white; }
 .day-pill.active .wd, .day-pill.active .dd { color: #7F77DD; }
-
-/* NAV */
-.bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 520px; background: white; border-top: 1px solid #eee; display: none; flex-wrap: nowrap; z-index: 100; }
-.nav-item { flex: 1; padding: 10px 0; text-align: center; cursor: pointer; color: #aaa; font-size: 10px; }
+.bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 520px; background: white; border-top: 1px solid #eee; display: none; z-index: 100; }
+.nav-row { display: flex; }
+.nav-item { flex: 1; padding: 8px 0; text-align: center; cursor: pointer; color: #aaa; font-size: 10px; }
 .nav-item.active { color: #7F77DD; }
 .nav-icon { font-size: 18px; display: block; }
-
-/* SECTIONS */
 .section { display: none; padding: 1rem; }
 .section.active { display: block; }
-
-/* CARDS */
 .card { background: white; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 12px; }
 .card h3 { font-size: 15px; font-weight: 700; margin-bottom: 14px; }
-
-/* TURNO CARDS */
 .turno-card { background: white; border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; display: flex; gap: 12px; align-items: stretch; }
 .turno-hora { display: flex; flex-direction: column; align-items: center; min-width: 44px; }
 .turno-hora .h { font-size: 16px; font-weight: 800; }
@@ -82,31 +74,52 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
 .color-cancelado { background: #E24B4A; }
 .empty-state { text-align: center; padding: 3rem 1rem; color: #aaa; }
 .empty-icon { font-size: 48px; margin-bottom: 12px; }
-
-/* MÉTRICAS */
 .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
 .metric { background: white; border-radius: 12px; padding: 1rem; }
 .metric .label { font-size: 11px; color: #aaa; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
 .metric .value { font-size: 28px; font-weight: 800; color: #333; margin-top: 4px; }
 .metric .sub { font-size: 11px; color: #7F77DD; margin-top: 2px; font-weight: 600; }
-
-/* CLIENTES */
 .cliente-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f5f5f5; }
 .cliente-avatar { width: 40px; height: 40px; border-radius: 50%; background: #EEEDFE; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; color: #7F77DD; flex-shrink: 0; }
 .cliente-info { flex: 1; }
 .cliente-nombre { font-size: 14px; font-weight: 700; }
 .cliente-datos { font-size: 12px; color: #aaa; }
 .cliente-badge { font-size: 11px; font-weight: 700; color: #7F77DD; background: #EEEDFE; padding: 2px 8px; border-radius: 10px; }
-
-/* SERVICIOS */
 .servicio-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f5f5f5; }
 .servicio-row:last-child { border-bottom: none; }
 .precio-pill { background: #EEEDFE; color: #3C3489; font-size: 14px; font-weight: 800; padding: 6px 12px; border-radius: 10px; }
+
+/* STOCK */
+.producto-card { background: white; border-radius: 12px; padding: 14px; margin-bottom: 10px; border-left: 4px solid #639922; }
+.producto-card.stock-bajo { border-left-color: #E24B4A; }
+.producto-card.stock-medio { border-left-color: #BA7517; }
+.producto-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.producto-nombre { font-size: 15px; font-weight: 700; }
+.producto-cat { font-size: 11px; color: #aaa; margin-top: 2px; }
+.stock-badge { font-size: 13px; font-weight: 800; padding: 6px 12px; border-radius: 10px; }
+.stock-ok { background: #EAF3DE; color: #27500A; }
+.stock-bajo-badge { background: #FCEBEB; color: #A32D2D; }
+.stock-medio-badge { background: #FAEEDA; color: #633806; }
+.producto-detalles { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+.detalle-item { font-size: 12px; color: #888; }
+.detalle-item span { font-weight: 700; color: #333; display: block; font-size: 13px; }
+.producto-acciones { display: flex; gap: 8px; }
+.stock-filtros { display: flex; gap: 8px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; }
+.filtro-btn { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; border: 1.5px solid #eee; background: white; cursor: pointer; white-space: nowrap; color: #666; }
+.filtro-btn.active { background: #7F77DD; color: white; border-color: #7F77DD; }
+.scanner-box { background: #1a1a1a; border-radius: 12px; overflow: hidden; margin-bottom: 12px; position: relative; min-height: 200px; display: flex; align-items: center; justify-content: center; }
+.scanner-box video { width: 100%; display: block; }
+.scanner-line { position: absolute; top: 50%; left: 10%; right: 10%; height: 2px; background: #7F77DD; box-shadow: 0 0 8px #7F77DD; }
+.scanner-label { position: absolute; bottom: 12px; left: 0; right: 0; text-align: center; color: white; font-size: 12px; }
+#scanner-result { background: #EEEDFE; border-radius: 10px; padding: 12px; text-align: center; font-size: 14px; color: #3C3489; font-weight: 700; display: none; margin-bottom: 12px; }
+.historial-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; }
+.historial-item:last-child { border-bottom: none; }
+.mov-entrada { color: #27500A; font-weight: 700; }
+.mov-salida { color: #A32D2D; font-weight: 700; }
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
 <div class="login-screen" id="login-screen">
   <div class="login-card">
     <div class="login-logo">
@@ -114,26 +127,16 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
       <p>Panel de administración</p>
     </div>
     <div id="alert-login"></div>
-    <div class="form-group">
-      <label>Usuario</label>
-      <input type="text" id="login-user" placeholder="admin" />
-    </div>
-    <div class="form-group">
-      <label>Contraseña</label>
-      <input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" />
-    </div>
+    <div class="form-group"><label>Usuario</label><input type="text" id="login-user" placeholder="admin" /></div>
+    <div class="form-group"><label>Contraseña</label><input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" /></div>
     <button class="btn" onclick="doLogin()">Ingresar</button>
   </div>
 </div>
 
-<!-- APP ADMIN -->
 <div class="app" id="admin-app" style="display:none">
   <div class="header" id="admin-header">
     <div class="header-top">
-      <div>
-        <h1>Panel Admin</h1>
-        <div class="header-sub" id="header-fecha">Cargando...</div>
-      </div>
+      <div><h1>Panel Admin</h1><div class="header-sub" id="header-fecha">Cargando...</div></div>
       <button class="logout-btn" onclick="doLogout()">Salir</button>
     </div>
     <div class="date-nav">
@@ -144,20 +147,14 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
     <div class="week-strip" id="week-strip"></div>
   </div>
 
-  <!-- AGENDA -->
   <div id="sec-agenda" class="section active">
     <div id="lista-turnos"><div class="empty-state"><div class="empty-icon">📭</div><p>Cargando...</p></div></div>
   </div>
 
-  <!-- CLIENTES -->
   <div id="sec-clientes" class="section">
-    <div class="card">
-      <h3>Clientes</h3>
-      <div id="lista-clientes"><div style="text-align:center;color:#aaa;padding:1rem;font-size:14px">Cargando...</div></div>
-    </div>
+    <div class="card"><h3>Clientes</h3><div id="lista-clientes"></div></div>
   </div>
 
-  <!-- STATS -->
   <div id="sec-stats" class="section">
     <div class="metric-grid">
       <div class="metric"><div class="label">Hoy</div><div class="value" id="m-hoy">-</div><div class="sub">turnos</div></div>
@@ -165,18 +162,11 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
       <div class="metric"><div class="label">Este mes</div><div class="value" id="m-mes">-</div><div class="sub">turnos</div></div>
       <div class="metric"><div class="label">Ingresos hoy</div><div class="value" id="m-ingresos">-</div><div class="sub">estimado</div></div>
     </div>
-    <div class="card">
-      <h3>Servicios más pedidos</h3>
-      <div id="top-servicios"></div>
-    </div>
+    <div class="card"><h3>Servicios más pedidos</h3><div id="top-servicios"></div></div>
   </div>
 
-  <!-- SERVICIOS -->
   <div id="sec-servicios" class="section">
-    <div class="card">
-      <h3>Servicios activos</h3>
-      <div id="lista-servicios"></div>
-    </div>
+    <div class="card"><h3>Servicios activos</h3><div id="lista-servicios"></div></div>
     <div class="card">
       <h3>Agregar servicio</h3>
       <div id="alert-servicio"></div>
@@ -188,12 +178,58 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
     </div>
   </div>
 
-  <!-- NAV -->
+  <div id="sec-stock" class="section">
+    <div class="stock-filtros">
+      <button class="filtro-btn active" onclick="filtrarStock('todos', this)">Todos</button>
+      <button class="filtro-btn" onclick="filtrarStock('bajo', this)">Stock bajo</button>
+      <button class="filtro-btn" onclick="filtrarStock('venta', this)">Venta</button>
+      <button class="filtro-btn" onclick="filtrarStock('insumo', this)">Insumos</button>
+    </div>
+    <div id="lista-productos"></div>
+    <div class="card">
+      <h3>Agregar producto</h3>
+      <div id="alert-producto"></div>
+      <button class="btn btn-outline" onclick="toggleScanner()" style="margin-bottom:12px">📷 Escanear código de barras</button>
+      <div id="scanner-container" style="display:none">
+        <div class="scanner-box"><div id="scanner-preview"></div><div class="scanner-line"></div><div class="scanner-label">Apuntá la cámara al código</div></div>
+        <button class="btn btn-danger btn-sm" onclick="detenerScanner()" style="margin-bottom:12px">Detener scanner</button>
+      </div>
+      <div id="scanner-result"></div>
+      <div class="form-group"><label>Nombre del producto</label><input type="text" id="p-nombre" placeholder="Ej: Shampoo Keratina" /></div>
+      <div class="form-group"><label>Código de barras</label><input type="text" id="p-codigo" placeholder="Se completa al escanear o manual" /></div>
+      <div class="form-group"><label>Categoría</label>
+        <select id="p-cat">
+          <option value="cabello">Cabello</option>
+          <option value="coloración">Coloración</option>
+          <option value="tratamiento">Tratamiento</option>
+          <option value="uñas">Uñas</option>
+          <option value="estética">Estética</option>
+          <option value="general">General</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Tipo</label>
+        <select id="p-tipo">
+          <option value="venta">Para venta</option>
+          <option value="insumo">Insumo de trabajo</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Precio de costo</label><input type="number" id="p-costo" placeholder="Ej: 1200" /></div>
+      <div class="form-group"><label>Precio de venta</label><input type="number" id="p-venta" placeholder="Ej: 2800 (0 si es insumo)" /></div>
+      <div class="form-group"><label>Cantidad inicial</label><input type="number" id="p-cantidad" placeholder="Ej: 10" /></div>
+      <div class="form-group"><label>Alerta cuando quede menos de</label><input type="number" id="p-minimo" placeholder="Ej: 5" /></div>
+      <div class="form-group"><label>Proveedor</label><input type="text" id="p-proveedor" placeholder="Ej: Distribuidora Norte" /></div>
+      <button class="btn" onclick="agregarProducto()">Agregar producto</button>
+    </div>
+  </div>
+
   <div class="bottom-nav" id="bottom-nav">
-    <div class="nav-item active" id="nav-agenda" onclick="showNav('agenda')"><span class="nav-icon">📅</span>Agenda</div>
-    <div class="nav-item" id="nav-clientes" onclick="showNav('clientes')"><span class="nav-icon">👥</span>Clientes</div>
-    <div class="nav-item" id="nav-stats" onclick="showNav('stats')"><span class="nav-icon">📊</span>Stats</div>
-    <div class="nav-item" id="nav-servicios" onclick="showNav('servicios')"><span class="nav-icon">✂️</span>Servicios</div>
+    <div class="nav-row">
+      <div class="nav-item active" id="nav-agenda" onclick="showNav('agenda')"><span class="nav-icon">📅</span>Agenda</div>
+      <div class="nav-item" id="nav-clientes" onclick="showNav('clientes')"><span class="nav-icon">👥</span>Clientes</div>
+      <div class="nav-item" id="nav-stats" onclick="showNav('stats')"><span class="nav-icon">📊</span>Stats</div>
+      <div class="nav-item" id="nav-servicios" onclick="showNav('servicios')"><span class="nav-icon">✂️</span>Servicios</div>
+      <div class="nav-item" id="nav-stock" onclick="showNav('stock')"><span class="nav-icon">📦</span>Stock</div>
+    </div>
   </div>
 </div>
 
@@ -205,206 +241,237 @@ const ADMIN_PASS = 'miturno2024';
 const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let fechaActiva = new Date();
-let semanaOffset = 0;
+let fechaActiva = new Date(), semanaOffset = 0, scannerActivo = false, todosProductos = [];
 
 function doLogin() {
   const u = document.getElementById('login-user').value.trim();
   const p = document.getElementById('login-pass').value;
-  if (u === ADMIN_USER && p === ADMIN_PASS) {
-    sessionStorage.setItem('mty_admin', '1');
-    mostrarAdmin();
-  } else {
-    document.getElementById('alert-login').innerHTML = '<div class="alert alert-error">Usuario o contraseña incorrectos.</div>';
-  }
+  if (u === ADMIN_USER && p === ADMIN_PASS) { sessionStorage.setItem('mty_admin','1'); mostrarAdmin(); }
+  else document.getElementById('alert-login').innerHTML = '<div class="alert alert-error">Usuario o contraseña incorrectos.</div>';
 }
-
-function doLogout() {
-  sessionStorage.removeItem('mty_admin');
-  document.getElementById('admin-app').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
-}
-
+function doLogout() { sessionStorage.removeItem('mty_admin'); location.reload(); }
 function mostrarAdmin() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('admin-app').style.display = 'block';
   document.getElementById('admin-header').style.display = 'block';
-  document.getElementById('bottom-nav').style.display = 'flex';
-  renderWeekStrip();
-  cargarTurnos();
+  document.getElementById('bottom-nav').style.display = 'block';
+  renderWeekStrip(); cargarTurnos();
 }
-
 if (sessionStorage.getItem('mty_admin')) mostrarAdmin();
 
 function getLunes(offset) {
-  const hoy = new Date();
-  const dia = hoy.getDay() || 7;
-  const lunes = new Date(hoy);
-  lunes.setDate(hoy.getDate() - dia + 1 + offset * 7);
-  lunes.setHours(0,0,0,0);
-  return lunes;
+  const hoy = new Date(), dia = hoy.getDay()||7, lunes = new Date(hoy);
+  lunes.setDate(hoy.getDate()-dia+1+offset*7); lunes.setHours(0,0,0,0); return lunes;
 }
-
 function renderWeekStrip() {
-  const lunes = getLunes(semanaOffset);
-  const dias = ['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
+  const lunes = getLunes(semanaOffset), dias = ['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
   let html = '';
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(lunes);
-    d.setDate(lunes.getDate() + i);
-    const isActive = d.toDateString() === fechaActiva.toDateString();
-    html += `<div class="day-pill ${isActive ? 'active' : ''}" onclick="seleccionarDia(${d.getTime()})">
-      <div class="wd">${dias[i]}</div>
-      <div class="dd">${d.getDate()}</div>
-    </div>`;
+  for (let i=0;i<7;i++) {
+    const d = new Date(lunes); d.setDate(lunes.getDate()+i);
+    const isActive = d.toDateString()===fechaActiva.toDateString();
+    html += `<div class="day-pill ${isActive?'active':''}" onclick="seleccionarDia(${d.getTime()})"><div class="wd">${dias[i]}</div><div class="dd">${d.getDate()}</div></div>`;
   }
   document.getElementById('week-strip').innerHTML = html;
-  const lbl = lunes.toLocaleDateString('es-AR', {month:'long', year:'numeric'});
-  document.getElementById('semana-label').textContent = semanaOffset === 0 ? 'Esta semana' : lbl;
-  document.getElementById('header-fecha').textContent = fechaActiva.toLocaleDateString('es-AR', {weekday:'long', day:'numeric', month:'long'});
+  document.getElementById('semana-label').textContent = semanaOffset===0?'Esta semana':getLunes(semanaOffset).toLocaleDateString('es-AR',{month:'long',year:'numeric'});
+  document.getElementById('header-fecha').textContent = fechaActiva.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
 }
-
-function seleccionarDia(ts) {
-  fechaActiva = new Date(ts);
-  renderWeekStrip();
-  cargarTurnos();
-}
-
-function cambiarSemana(dir) {
-  semanaOffset += dir;
-  const lunes = getLunes(semanaOffset);
-  fechaActiva = new Date(lunes);
-  renderWeekStrip();
-  cargarTurnos();
-}
+function seleccionarDia(ts) { fechaActiva=new Date(ts); renderWeekStrip(); cargarTurnos(); }
+function cambiarSemana(dir) { semanaOffset+=dir; fechaActiva=getLunes(semanaOffset); renderWeekStrip(); cargarTurnos(); }
 
 function showNav(sec) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('sec-' + sec).classList.add('active');
-  document.getElementById('nav-' + sec).classList.add('active');
-  if (sec === 'clientes') cargarClientes();
-  if (sec === 'stats') cargarStats();
-  if (sec === 'servicios') cargarServiciosPanel();
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('sec-'+sec).classList.add('active');
+  document.getElementById('nav-'+sec).classList.add('active');
+  if(sec==='clientes') cargarClientes();
+  if(sec==='stats') cargarStats();
+  if(sec==='servicios') cargarServiciosPanel();
+  if(sec==='stock') cargarStock();
 }
 
 async function cargarTurnos() {
-  const inicio = new Date(fechaActiva); inicio.setHours(0,0,0,0);
-  const fin = new Date(fechaActiva); fin.setHours(23,59,59,999);
-  const { data } = await db.from('turnos').select('*, servicios(nombre, precio)').gte('fecha_hora', inicio.toISOString()).lte('fecha_hora', fin.toISOString()).order('fecha_hora');
-  const cont = document.getElementById('lista-turnos');
-  if (!data || !data.length) {
-    cont.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>Sin turnos para este día</p></div>';
-    return;
-  }
-  cont.innerHTML = data.map(t => {
-    const dt = new Date(t.fecha_hora);
-    const h = dt.getHours().toString().padStart(2,'0');
-    const m = dt.getMinutes().toString().padStart(2,'0');
-    const estado = t.estado || 'confirmado';
+  const inicio=new Date(fechaActiva); inicio.setHours(0,0,0,0);
+  const fin=new Date(fechaActiva); fin.setHours(23,59,59,999);
+  const {data} = await db.from('turnos').select('*, servicios(nombre,precio)').gte('fecha_hora',inicio.toISOString()).lte('fecha_hora',fin.toISOString()).order('fecha_hora');
+  const cont=document.getElementById('lista-turnos');
+  if(!data||!data.length){cont.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><p>Sin turnos para este día</p></div>';return;}
+  cont.innerHTML=data.map(t=>{
+    const dt=new Date(t.fecha_hora), h=dt.getHours().toString().padStart(2,'0'), m=dt.getMinutes().toString().padStart(2,'0'), estado=t.estado||'confirmado';
     return `<div class="turno-card">
       <div class="turno-hora"><div class="h">${h}</div><div class="m">${m}</div></div>
       <div class="turno-divider color-${estado}"></div>
       <div class="turno-info">
         <div class="turno-nombre">${t.cliente_nombre}</div>
-        <div class="turno-servicio">${t.servicios?.nombre || 'Servicio'}</div>
-        <div class="turno-precio">$${Number(t.servicios?.precio || 0).toLocaleString('es-AR')}</div>
+        <div class="turno-servicio">${t.servicios?.nombre||'Servicio'}</div>
+        <div class="turno-precio">$${Number(t.servicios?.precio||0).toLocaleString('es-AR')}</div>
         <div class="turno-tel">📱 ${t.cliente_telefono}</div>
         <span class="badge badge-${estado}">${estado.charAt(0).toUpperCase()+estado.slice(1)}</span>
         <div class="turno-acciones">
-          ${estado !== 'confirmado' ? `<button class="btn btn-sm" onclick="cambiarEstado('${t.id}','confirmado')">Confirmar</button>` : ''}
-          ${estado !== 'cancelado' ? `<button class="btn btn-sm btn-danger" onclick="cambiarEstado('${t.id}','cancelado')">Cancelar</button>` : ''}
+          ${estado!=='confirmado'?`<button class="btn btn-sm btn-green" onclick="cambiarEstado('${t.id}','confirmado')">Confirmar</button>`:''}
+          ${estado!=='cancelado'?`<button class="btn btn-sm btn-danger" onclick="cambiarEstado('${t.id}','cancelado')">Cancelar</button>`:''}
         </div>
       </div>
     </div>`;
   }).join('');
 }
-
-async function cambiarEstado(id, estado) {
-  await db.from('turnos').update({ estado }).eq('id', id);
-  cargarTurnos();
-}
+async function cambiarEstado(id,estado){await db.from('turnos').update({estado}).eq('id',id);cargarTurnos();}
 
 async function cargarClientes() {
-  const { data } = await db.from('turnos').select('cliente_nombre, cliente_telefono, servicio_id, created_at').order('created_at', {ascending: false});
-  const cont = document.getElementById('lista-clientes');
-  if (!data || !data.length) { cont.innerHTML = '<p style="text-align:center;color:#aaa;padding:1rem;font-size:14px">Sin clientes aún</p>'; return; }
-  const unicos = {};
-  data.forEach(t => {
-    if (!unicos[t.cliente_telefono]) unicos[t.cliente_telefono] = { ...t, visitas: 1 };
-    else unicos[t.cliente_telefono].visitas++;
-  });
-  cont.innerHTML = Object.values(unicos).map(c => {
-    const ini = c.cliente_nombre.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
-    return `<div class="cliente-item">
-      <div class="cliente-avatar">${ini}</div>
-      <div class="cliente-info">
-        <div class="cliente-nombre">${c.cliente_nombre}</div>
-        <div class="cliente-datos">📱 ${c.cliente_telefono}</div>
-      </div>
-      <div class="cliente-badge">${c.visitas} ${c.visitas === 1 ? 'visita' : 'visitas'}</div>
-    </div>`;
+  const {data}=await db.from('turnos').select('cliente_nombre,cliente_telefono,created_at').order('created_at',{ascending:false});
+  const cont=document.getElementById('lista-clientes');
+  if(!data||!data.length){cont.innerHTML='<p style="text-align:center;color:#aaa;padding:1rem;font-size:14px">Sin clientes aún</p>';return;}
+  const unicos={};
+  data.forEach(t=>{if(!unicos[t.cliente_telefono])unicos[t.cliente_telefono]={...t,visitas:1};else unicos[t.cliente_telefono].visitas++;});
+  cont.innerHTML=Object.values(unicos).map(c=>{
+    const ini=c.cliente_nombre.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    return `<div class="cliente-item"><div class="cliente-avatar">${ini}</div><div class="cliente-info"><div class="cliente-nombre">${c.cliente_nombre}</div><div class="cliente-datos">📱 ${c.cliente_telefono}</div></div><div class="cliente-badge">${c.visitas} ${c.visitas===1?'visita':'visitas'}</div></div>`;
   }).join('');
 }
 
 async function cargarStats() {
-  const hoy = new Date(); hoy.setHours(0,0,0,0);
-  const finHoy = new Date(); finHoy.setHours(23,59,59,999);
-  const lunes = getLunes(0);
-  const mesInicio = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-  const [rHoy, rSemana, rMes] = await Promise.all([
-    db.from('turnos').select('*, servicios(precio)', {count:'exact'}).gte('fecha_hora', hoy.toISOString()).lte('fecha_hora', finHoy.toISOString()),
-    db.from('turnos').select('*', {count:'exact', head:true}).gte('fecha_hora', lunes.toISOString()),
-    db.from('turnos').select('*', {count:'exact', head:true}).gte('fecha_hora', mesInicio.toISOString()),
+  const hoy=new Date();hoy.setHours(0,0,0,0);
+  const finHoy=new Date();finHoy.setHours(23,59,59,999);
+  const lunes=getLunes(0), mesInicio=new Date(hoy.getFullYear(),hoy.getMonth(),1);
+  const [rHoy,rSemana,rMes]=await Promise.all([
+    db.from('turnos').select('*,servicios(precio)',{count:'exact'}).gte('fecha_hora',hoy.toISOString()).lte('fecha_hora',finHoy.toISOString()),
+    db.from('turnos').select('*',{count:'exact',head:true}).gte('fecha_hora',lunes.toISOString()),
+    db.from('turnos').select('*',{count:'exact',head:true}).gte('fecha_hora',mesInicio.toISOString()),
   ]);
-  document.getElementById('m-hoy').textContent = rHoy.count || 0;
-  document.getElementById('m-semana').textContent = rSemana.count || 0;
-  document.getElementById('m-mes').textContent = rMes.count || 0;
-  let ingresos = 0;
-  if (rHoy.data) rHoy.data.forEach(t => { ingresos += Number(t.servicios?.precio || 0); });
-  document.getElementById('m-ingresos').textContent = '$' + ingresos.toLocaleString('es-AR');
-  const { data: topData } = await db.from('turnos').select('servicios(nombre)');
-  const conteo = {};
-  if (topData) topData.forEach(t => { const n = t.servicios?.nombre; if (n) conteo[n] = (conteo[n]||0)+1; });
-  const sorted = Object.entries(conteo).sort((a,b) => b[1]-a[1]).slice(0,5);
-  const topCont = document.getElementById('top-servicios');
-  topCont.innerHTML = sorted.length ? sorted.map(([n,c]) => `<div class="servicio-row"><span style="font-size:14px">${n}</span><span style="font-weight:700;color:#7F77DD">${c} turnos</span></div>`).join('') : '<p style="text-align:center;color:#aaa;font-size:14px;padding:1rem">Sin datos aún</p>';
+  document.getElementById('m-hoy').textContent=rHoy.count||0;
+  document.getElementById('m-semana').textContent=rSemana.count||0;
+  document.getElementById('m-mes').textContent=rMes.count||0;
+  let ingresos=0;
+  if(rHoy.data)rHoy.data.forEach(t=>{ingresos+=Number(t.servicios?.precio||0);});
+  document.getElementById('m-ingresos').textContent='$'+ingresos.toLocaleString('es-AR');
+  const {data:topData}=await db.from('turnos').select('servicios(nombre)');
+  const conteo={};
+  if(topData)topData.forEach(t=>{const n=t.servicios?.nombre;if(n)conteo[n]=(conteo[n]||0)+1;});
+  const sorted=Object.entries(conteo).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  document.getElementById('top-servicios').innerHTML=sorted.length?sorted.map(([n,c])=>`<div class="servicio-row"><span style="font-size:14px">${n}</span><span style="font-weight:700;color:#7F77DD">${c} turnos</span></div>`).join(''):'<p style="text-align:center;color:#aaa;font-size:14px;padding:1rem">Sin datos aún</p>';
 }
 
 async function cargarServiciosPanel() {
-  const { data } = await db.from('servicios').select('*').eq('activo', true);
-  const cont = document.getElementById('lista-servicios');
-  if (!data || !data.length) { cont.innerHTML = '<p style="text-align:center;color:#aaa;font-size:14px;padding:1rem">Sin servicios cargados</p>'; return; }
-  cont.innerHTML = data.map(s => `<div class="servicio-row">
-    <div><div style="font-size:14px;font-weight:700">${s.nombre}</div><div style="font-size:12px;color:#aaa">${s.duracion_minutos} min</div></div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <div class="precio-pill">$${Number(s.precio).toLocaleString('es-AR')}</div>
-      <button class="btn btn-sm btn-danger" onclick="eliminarServicio('${s.id}')">✕</button>
-    </div>
-  </div>`).join('');
+  const {data}=await db.from('servicios').select('*').eq('activo',true);
+  const cont=document.getElementById('lista-servicios');
+  if(!data||!data.length){cont.innerHTML='<p style="text-align:center;color:#aaa;font-size:14px;padding:1rem">Sin servicios</p>';return;}
+  cont.innerHTML=data.map(s=>`<div class="servicio-row"><div><div style="font-size:14px;font-weight:700">${s.nombre}</div><div style="font-size:12px;color:#aaa">${s.duracion_minutos} min</div></div><div style="display:flex;align-items:center;gap:8px"><div class="precio-pill">$${Number(s.precio).toLocaleString('es-AR')}</div><button class="btn btn-sm btn-danger" onclick="eliminarServicio('${s.id}')">✕</button></div></div>`).join('');
 }
-
 async function agregarServicio() {
-  const nombre = document.getElementById('srv-nombre').value.trim();
-  const desc = document.getElementById('srv-desc').value.trim();
-  const dur = parseInt(document.getElementById('srv-dur').value);
-  const precio = parseFloat(document.getElementById('srv-precio').value);
-  const alerta = document.getElementById('alert-servicio');
-  if (!nombre || !dur || !precio) { alerta.innerHTML = '<div class="alert alert-error">Completá nombre, duración y precio.</div>'; return; }
-  const { error } = await db.from('servicios').insert([{ nombre, descripcion: desc, duracion_minutos: dur, precio, activo: true }]);
-  if (error) { alerta.innerHTML = '<div class="alert alert-error">Error al guardar.</div>'; return; }
-  alerta.innerHTML = '<div class="alert" style="background:#EAF3DE;color:#27500A">✓ Servicio agregado.</div>';
-  document.getElementById('srv-nombre').value = '';
-  document.getElementById('srv-desc').value = '';
-  document.getElementById('srv-dur').value = '';
-  document.getElementById('srv-precio').value = '';
-  setTimeout(() => { alerta.innerHTML = ''; cargarServiciosPanel(); }, 1500);
+  const nombre=document.getElementById('srv-nombre').value.trim(), desc=document.getElementById('srv-desc').value.trim(), dur=parseInt(document.getElementById('srv-dur').value), precio=parseFloat(document.getElementById('srv-precio').value), alerta=document.getElementById('alert-servicio');
+  if(!nombre||!dur||!precio){alerta.innerHTML='<div class="alert alert-error">Completá nombre, duración y precio.</div>';return;}
+  const {error}=await db.from('servicios').insert([{nombre,descripcion:desc,duracion_minutos:dur,precio,activo:true}]);
+  if(error){alerta.innerHTML='<div class="alert alert-error">Error al guardar.</div>';return;}
+  alerta.innerHTML='<div class="alert alert-success">✓ Servicio agregado.</div>';
+  document.getElementById('srv-nombre').value='';document.getElementById('srv-desc').value='';document.getElementById('srv-dur').value='';document.getElementById('srv-precio').value='';
+  setTimeout(()=>{alerta.innerHTML='';cargarServiciosPanel();},1500);
+}
+async function eliminarServicio(id){if(!confirm('¿Eliminar este servicio?'))return;await db.from('servicios').update({activo:false}).eq('id',id);cargarServiciosPanel();}
+
+// STOCK
+async function cargarStock(filtro='todos') {
+  const {data}=await db.from('productos').select('*').eq('activo',true).order('nombre');
+  todosProductos=data||[];
+  renderProductos(filtro);
 }
 
-async function eliminarServicio(id) {
-  if (!confirm('¿Eliminar este servicio?')) return;
-  await db.from('servicios').update({ activo: false }).eq('id', id);
-  cargarServiciosPanel();
+function renderProductos(filtro) {
+  let lista=todosProductos;
+  if(filtro==='bajo') lista=lista.filter(p=>p.cantidad<=p.cantidad_minima);
+  if(filtro==='venta') lista=lista.filter(p=>p.tipo==='venta');
+  if(filtro==='insumo') lista=lista.filter(p=>p.tipo==='insumo');
+  const cont=document.getElementById('lista-productos');
+  if(!lista.length){cont.innerHTML='<div class="empty-state"><div class="empty-icon">📦</div><p>Sin productos</p></div>';return;}
+  cont.innerHTML=lista.map(p=>{
+    const nivel=p.cantidad<=p.cantidad_minima?'bajo':p.cantidad<=p.cantidad_minima*2?'medio':'ok';
+    return `<div class="producto-card stock-${nivel==='ok'?'':nivel}">
+      <div class="producto-header">
+        <div><div class="producto-nombre">${p.nombre}</div><div class="producto-cat">${p.categoria} · ${p.tipo==='venta'?'Para venta':'Insumo'}</div></div>
+        <div class="stock-badge stock-${nivel==='ok'?'ok':nivel+'-badge'}">${p.cantidad} und</div>
+      </div>
+      <div class="producto-detalles">
+        <div class="detalle-item">Costo<span>$${Number(p.precio_costo||0).toLocaleString('es-AR')}</span></div>
+        <div class="detalle-item">Venta<span>${p.precio_venta?'$'+Number(p.precio_venta).toLocaleString('es-AR'):'-'}</span></div>
+        <div class="detalle-item">Mínimo<span>${p.cantidad_minima} und</span></div>
+        <div class="detalle-item">Proveedor<span>${p.proveedor||'-'}</span></div>
+      </div>
+      <div class="producto-acciones">
+        <button class="btn btn-sm btn-green" onclick="moverStock('${p.id}','entrada',1)">+ Entrada</button>
+        <button class="btn btn-sm btn-danger" onclick="moverStock('${p.id}','salida',1)">- Salida</button>
+        <button class="btn btn-sm btn-outline" onclick="verHistorial('${p.id}','${p.nombre}')">Historial</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filtrarStock(filtro, el) {
+  document.querySelectorAll('.filtro-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderProductos(filtro);
+}
+
+async function moverStock(id, tipo, cantidad) {
+  const cant = parseInt(prompt(`¿Cuántas unidades de ${tipo==='entrada'?'entrada':'salida'}?`, cantidad));
+  if(!cant||cant<=0) return;
+  const motivo = prompt('Motivo (opcional):','') || '';
+  const prod = todosProductos.find(p=>p.id===id);
+  const nuevaCantidad = tipo==='entrada' ? prod.cantidad+cant : Math.max(0,prod.cantidad-cant);
+  await Promise.all([
+    db.from('productos').update({cantidad:nuevaCantidad,updated_at:new Date().toISOString()}).eq('id',id),
+    db.from('stock_movimientos').insert([{producto_id:id,tipo,cantidad:cant,motivo}])
+  ]);
+  cargarStock();
+}
+
+async function verHistorial(id, nombre) {
+  const {data}=await db.from('stock_movimientos').select('*').eq('producto_id',id).order('created_at',{ascending:false}).limit(20);
+  if(!data||!data.length){alert('Sin movimientos registrados para '+nombre);return;}
+  const modal=document.createElement('div');
+  modal.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:999;display:flex;align-items:flex-end;justify-content:center';
+  modal.innerHTML=`<div style="background:white;border-radius:16px 16px 0 0;padding:1.5rem;width:100%;max-width:520px;max-height:70vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <div style="font-size:16px;font-weight:800">Historial — ${nombre}</div>
+      <button onclick="this.closest('div[style]').remove()" style="background:#f0f0f5;border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px">Cerrar</button>
+    </div>
+    ${data.map(m=>`<div class="historial-item">
+      <div><span class="${m.tipo==='entrada'?'mov-entrada':'mov-salida'}">${m.tipo==='entrada'?'↑ Entrada':'↓ Salida'} ${m.cantidad} und</span><div style="font-size:11px;color:#aaa">${m.motivo||'Sin motivo'}</div></div>
+      <div style="font-size:11px;color:#aaa">${new Date(m.created_at).toLocaleDateString('es-AR')}</div>
+    </div>`).join('')}
+  </div>`;
+  document.body.appendChild(modal);
+}
+
+async function agregarProducto() {
+  const nombre=document.getElementById('p-nombre').value.trim(), codigo=document.getElementById('p-codigo').value.trim(), cat=document.getElementById('p-cat').value, tipo=document.getElementById('p-tipo').value, costo=parseFloat(document.getElementById('p-costo').value)||0, venta=parseFloat(document.getElementById('p-venta').value)||0, cantidad=parseInt(document.getElementById('p-cantidad').value)||0, minimo=parseInt(document.getElementById('p-minimo').value)||5, proveedor=document.getElementById('p-proveedor').value.trim(), alerta=document.getElementById('alert-producto');
+  if(!nombre){alerta.innerHTML='<div class="alert alert-error">El nombre es obligatorio.</div>';return;}
+  const {error}=await db.from('productos').insert([{nombre,codigo_barras:codigo,categoria:cat,tipo,precio_costo:costo,precio_venta:venta,cantidad,cantidad_minima:minimo,proveedor,activo:true}]);
+  if(error){alerta.innerHTML='<div class="alert alert-error">Error al guardar.</div>';return;}
+  if(cantidad>0) await db.from('stock_movimientos').insert([{producto_id:(await db.from('productos').select('id').eq('nombre',nombre).single()).data.id,tipo:'entrada',cantidad,motivo:'Stock inicial'}]);
+  alerta.innerHTML='<div class="alert alert-success">✓ Producto agregado.</div>';
+  ['p-nombre','p-codigo','p-costo','p-venta','p-cantidad','p-minimo','p-proveedor'].forEach(id=>document.getElementById(id).value='');
+  setTimeout(()=>{alerta.innerHTML='';cargarStock();},1500);
+  if(scannerActivo) detenerScanner();
+}
+
+function toggleScanner() {
+  const cont=document.getElementById('scanner-container');
+  if(scannerActivo){detenerScanner();return;}
+  cont.style.display='block'; scannerActivo=true;
+  Quagga.init({inputStream:{name:'Live',type:'LiveStream',target:document.getElementById('scanner-preview'),constraints:{facingMode:'environment'}},decoder:{readers:['ean_reader','code_128_reader','code_39_reader','upc_reader']}},err=>{
+    if(err){document.getElementById('scanner-result').style.display='block';document.getElementById('scanner-result').textContent='No se pudo acceder a la cámara.';cont.style.display='none';scannerActivo=false;return;}
+    Quagga.start();
+  });
+  Quagga.onDetected(data=>{
+    const codigo=data.codeResult.code;
+    document.getElementById('p-codigo').value=codigo;
+    document.getElementById('scanner-result').style.display='block';
+    document.getElementById('scanner-result').textContent='✓ Código detectado: '+codigo;
+    detenerScanner();
+  });
+}
+
+function detenerScanner() {
+  if(scannerActivo){Quagga.stop();scannerActivo=false;}
+  document.getElementById('scanner-container').style.display='none';
 }
 </script>
 </body>
