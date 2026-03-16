@@ -162,6 +162,9 @@ function seleccionarServicio(id, nombre, precio, duracion) {
   cargarEmpleados();
   document.getElementById('paso-empleado').style.display = 'block';
   document.getElementById('paso-empleado').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.getElementById('paso-fecha').style.display = 'none';
+  document.getElementById('paso-horario').style.display = 'none';
+  document.getElementById('paso-datos').style.display = 'none';
 }
   let selEmpleado = null;
 
@@ -182,12 +185,14 @@ async function cargarEmpleados() {
     </div>`).join('');
 }
 
-function seleccionarEmpleado(id, nombre) {
+async function seleccionarEmpleado(id, nombre) {
   selEmpleado = { id: id === 'null' ? null : id, nombre };
   document.querySelectorAll('.servicio-card').forEach(c => c.classList.remove('selected'));
   document.getElementById('emp-' + id)?.classList.add('selected');
   document.getElementById('paso-fecha').style.display = 'block';
-  renderCalendario();
+  document.getElementById('paso-horario').style.display = 'none';
+  document.getElementById('paso-datos').style.display = 'none';
+  await renderCalendario();
   document.getElementById('paso-fecha').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -235,11 +240,11 @@ async function renderCalendario() {
 }ocument.getElementById('cal-grid').innerHTML = html;
 }
 
-function cambiarMes(dir) {
+async function cambiarMes(dir) {
   calMes += dir;
   if (calMes > 11) { calMes = 0; calAnio++; }
   if (calMes < 0) { calMes = 11; calAnio--; }
-  renderCalendario();
+  await renderCalendario();
 }
 
 async function seleccionarFecha(a, m, d) {
