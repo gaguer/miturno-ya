@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MiTurnoYa — Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; }
+.app { max-width: 520px; margin: 0 auto; padding: 0 0 80px; }
+
+/* LOGIN */
+.login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+.login-card { background: white; border-radius: 16px; padding: 2rem; width: 100%; max-width: 380px; }
+.login-logo { text-align: center; margin-bottom: 1.5rem; }
+.login-logo h1 { font-size: 24px; font-weight: 800; color: #7F77DD; }
+.login-logo p { font-size: 13px; color: #aaa; margin-top: 4px; }
+.form-group { margin-bottom: 14px; }
+.form-group label { font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 5px; }
+.form-group input { width: 100%; padding: 12px 14px; border: 1.5px solid #eee; border-radius: 10px; font-size: 15px; background: #fafafa; color: #1a1a1a; }
+.form-group input:focus { border-color: #7F77DD; outline: none; background: white; }
+.btn { width: 100%; padding: 13px; background: #7F77DD; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; }
+.btn:hover { background: #534AB7; }
+.btn-sm { width: auto; padding: 6px 14px; font-size: 12px; border-radius: 8px; }
+.btn-outline { background: transparent; border: 1.5px solid #7F77DD; color: #7F77DD; }
+.btn-danger { background: #E24B4A; }
+.btn-danger:hover { background: #A32D2D; }
+.alert { padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 14px; text-align: center; }
+.alert-error { background: #FCEBEB; color: #501313; }
+
+/* HEADER ADMIN */
+.header { background: #7F77DD; padding: 1rem 1.25rem 0; display: none; }
+.header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.header h1 { font-size: 18px; font-weight: 800; color: white; }
+.header-sub { font-size: 12px; color: rgba(255,255,255,0.8); }
+.logout-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; }
+
+/* WEEK STRIP */
+.week-strip { background: #6B63CC; display: flex; padding: 8px 1rem; gap: 4px; }
+.date-nav { display: flex; align-items: center; gap: 8px; padding-bottom: 12px; }
+.date-nav button { background: rgba(255,255,255,0.2); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; font-size: 16px; cursor: pointer; }
+.date-nav .date-label { flex: 1; text-align: center; color: white; font-size: 14px; font-weight: 600; }
+.day-pill { flex: 1; text-align: center; padding: 6px 4px; border-radius: 8px; cursor: pointer; }
+.day-pill .wd { font-size: 10px; color: rgba(255,255,255,0.7); text-transform: uppercase; }
+.day-pill .dd { font-size: 15px; font-weight: 700; color: white; }
+.day-pill.active { background: white; }
+.day-pill.active .wd, .day-pill.active .dd { color: #7F77DD; }
+
+/* NAV */
+.bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 520px; background: white; border-top: 1px solid #eee; display: none; flex-wrap: nowrap; z-index: 100; }
+.nav-item { flex: 1; padding: 10px 0; text-align: center; cursor: pointer; color: #aaa; font-size: 10px; }
+.nav-item.active { color: #7F77DD; }
+.nav-icon { font-size: 18px; display: block; }
+
+/* SECTIONS */
+.section { display: none; padding: 1rem; }
+.section.active { display: block; }
+
+/* CARDS */
+.card { background: white; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 12px; }
+.card h3 { font-size: 15px; font-weight: 700; margin-bottom: 14px; }
+
+/* TURNO CARDS */
+.turno-card { background: white; border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; display: flex; gap: 12px; align-items: stretch; }
+.turno-hora { display: flex; flex-direction: column; align-items: center; min-width: 44px; }
+.turno-hora .h { font-size: 16px; font-weight: 800; }
+.turno-hora .m { font-size: 11px; color: #aaa; }
+.turno-divider { width: 3px; border-radius: 3px; }
+.turno-info { flex: 1; }
+.turno-nombre { font-size: 15px; font-weight: 700; }
+.turno-servicio { font-size: 12px; color: #888; margin-top: 2px; }
+.turno-precio { font-size: 13px; font-weight: 700; color: #7F77DD; margin-top: 3px; }
+.turno-tel { font-size: 12px; color: #aaa; margin-top: 2px; }
+.turno-acciones { display: flex; gap: 6px; margin-top: 8px; }
+.badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
+.badge-confirmado { background: #EAF3DE; color: #27500A; }
+.badge-pendiente { background: #FAEEDA; color: #633806; }
+.badge-cancelado { background: #FCEBEB; color: #501313; }
+.color-confirmado { background: #639922; }
+.color-pendiente { background: #BA7517; }
+.color-cancelado { background: #E24B4A; }
+.empty-state { text-align: center; padding: 3rem 1rem; color: #aaa; }
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+
+/* MÉTRICAS */
+.metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.metric { background: white; border-radius: 12px; padding: 1rem; }
+.metric .label { font-size: 11px; color: #aaa; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.metric .value { font-size: 28px; font-weight: 800; color: #333; margin-top: 4px; }
+.metric .sub { font-size: 11px; color: #7F77DD; margin-top: 2px; font-weight: 600; }
+
+/* CLIENTES */
+.cliente-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f5f5f5; }
+.cliente-avatar { width: 40px; height: 40px; border-radius: 50%; background: #EEEDFE; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; color: #7F77DD; flex-shrink: 0; }
+.cliente-info { flex: 1; }
+.cliente-nombre { font-size: 14px; font-weight: 700; }
+.cliente-datos { font-size: 12px; color: #aaa; }
+.cliente-badge { font-size: 11px; font-weight: 700; color: #7F77DD; background: #EEEDFE; padding: 2px 8px; border-radius: 10px; }
+
+/* SERVICIOS */
+.servicio-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f5f5f5; }
+.servicio-row:last-child { border-bottom: none; }
+.precio-pill { background: #EEEDFE; color: #3C3489; font-size: 14px; font-weight: 800; padding: 6px 12px; border-radius: 10px; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <h1>📅 MiTurnoYa</h1>
+      <p>Panel de administración</p>
+    </div>
+    <div id="alert-login"></div>
+    <div class="form-group">
+      <label>Usuario</label>
+      <input type="text" id="login-user" placeholder="admin" />
+    </div>
+    <div class="form-group">
+      <label>Contraseña</label>
+      <input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" />
+    </div>
+    <button class="btn" onclick="doLogin()">Ingresar</button>
+  </div>
+</div>
+
+<!-- APP ADMIN -->
+<div class="app" id="admin-app" style="display:none">
+  <div class="header" id="admin-header">
+    <div class="header-top">
+      <div>
+        <h1>Panel Admin</h1>
+        <div class="header-sub" id="header-fecha">Cargando...</div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">Salir</button>
+    </div>
+    <div class="date-nav">
+      <button onclick="cambiarSemana(-1)">‹</button>
+      <div class="date-label" id="semana-label">Esta semana</div>
+      <button onclick="cambiarSemana(1)">›</button>
+    </div>
+    <div class="week-strip" id="week-strip"></div>
+  </div>
+
+  <!-- AGENDA -->
+  <div id="sec-agenda" class="section active">
+    <div id="lista-turnos"><div class="empty-state"><div class="empty-icon">📭</div><p>Cargando...</p></div></div>
+  </div>
+
+  <!-- CLIENTES -->
+  <div id="sec-clientes" class="section">
+    <div class="card">
+      <h3>Clientes</h3>
+      <div id="lista-clientes"><div style="text-align:center;color:#aaa;padding:1rem;font-size:14px">Cargando...</div></div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div id="sec-stats" class="section">
+    <div class="metric-grid">
+      <div class="metric"><div class="label">Hoy</div><div class="value" id="m-hoy">-</div><div class="sub">turnos</div></div>
+      <div class="metric"><div class="label">Esta semana</div><div class="value" id="m-semana">-</div><div class="sub">turnos</div></div>
+      <div class="metric"><div class="label">Este mes</div><div class="value" id="m-mes">-</div><div class="sub">turnos</div></div>
+      <div class="metric"><div class="label">Ingresos hoy</div><div class="value" id="m-ingresos">-</div><div class="sub">estimado</div></div>
+    </div>
+    <div class="card">
+      <h3>Servicios más pedidos</h3>
+      <div id="top-servicios"></div>
+    </div>
+  </div>
+
+  <!-- SERVICIOS -->
+  <div id="sec-servicios" class="section">
+    <div class="card">
+      <h3>Servicios activos</h3>
+      <div id="lista-servicios"></div>
+    </div>
+    <div class="card">
+      <h3>Agregar servicio</h3>
+      <div id="alert-servicio"></div>
+      <div class="form-group"><label>Nombre</label><input type="text" id="srv-nombre" placeholder="Ej: Depilación" /></div>
+      <div class="form-group"><label>Descripción</label><input type="text" id="srv-desc" placeholder="Opcional" /></div>
+      <div class="form-group"><label>Duración (minutos)</label><input type="number" id="srv-dur" placeholder="Ej: 45" /></div>
+      <div class="form-group"><label>Precio</label><input type="number" id="srv-precio" placeholder="Ej: 3500" /></div>
+      <button class="btn" onclick="agregarServicio()">Agregar servicio</button>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <div class="bottom-nav" id="bottom-nav">
+    <div class="nav-item active" id="nav-agenda" onclick="showNav('agenda')"><span class="nav-icon">📅</span>Agenda</div>
+    <div class="nav-item" id="nav-clientes" onclick="showNav('clientes')"><span class="nav-icon">👥</span>Clientes</div>
+    <div class="nav-item" id="nav-stats" onclick="showNav('stats')"><span class="nav-icon">📊</span>Stats</div>
+    <div class="nav-item" id="nav-servicios" onclick="showNav('servicios')"><span class="nav-icon">✂️</span>Servicios</div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://qivbrddsmamxsszacjhv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Axj3TD_KZyVj6Aa1_8JJlg_BILyCNFS';
+const ADMIN_USER = 'admin';
+const ADMIN_PASS = 'miturno2024';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let fechaActiva = new Date();
+let semanaOffset = 0;
+
+function doLogin() {
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value;
+  if (u === ADMIN_USER && p === ADMIN_PASS) {
+    sessionStorage.setItem('mty_admin', '1');
+    mostrarAdmin();
+  } else {
+    document.getElementById('alert-login').innerHTML = '<div class="alert alert-error">Usuario o contraseña incorrectos.</div>';
+  }
+}
+
+function doLogout() {
+  sessionStorage.removeItem('mty_admin');
+  document.getElementById('admin-app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+function mostrarAdmin() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('admin-app').style.display = 'block';
+  document.getElementById('admin-header').style.display = 'block';
+  document.getElementById('bottom-nav').style.display = 'flex';
+  renderWeekStrip();
+  cargarTurnos();
+}
+
+if (sessionStorage.getItem('mty_admin')) mostrarAdmin();
+
+function getLunes(offset) {
+  const hoy = new Date();
+  const dia = hoy.getDay() || 7;
+  const lunes = new Date(hoy);
+  lunes.setDate(hoy.getDate() - dia + 1 + offset * 7);
+  lunes.setHours(0,0,0,0);
+  return lunes;
+}
+
+function renderWeekStrip() {
+  const lunes = getLunes(semanaOffset);
+  const dias = ['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
+  let html = '';
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(lunes);
+    d.setDate(lunes.getDate() + i);
+    const isActive = d.toDateString() === fechaActiva.toDateString();
+    html += `<div class="day-pill ${isActive ? 'active' : ''}" onclick="seleccionarDia(${d.getTime()})">
+      <div class="wd">${dias[i]}</div>
+      <div class="dd">${d.getDate()}</div>
+    </div>`;
+  }
+  document.getElementById('week-strip').innerHTML = html;
+  const lbl = lunes.toLocaleDateString('es-AR', {month:'long', year:'numeric'});
+  document.getElementById('semana-label').textContent = semanaOffset === 0 ? 'Esta semana' : lbl;
+  document.getElementById('header-fecha').textContent = fechaActiva.toLocaleDateString('es-AR', {weekday:'long', day:'numeric', month:'long'});
+}
+
+function seleccionarDia(ts) {
+  fechaActiva = new Date(ts);
+  renderWeekStrip();
+  cargarTurnos();
+}
+
+function cambiarSemana(dir) {
+  semanaOffset += dir;
+  const lunes = getLunes(semanaOffset);
+  fechaActiva = new Date(lunes);
+  renderWeekStrip();
+  cargarTurnos();
+}
+
+function showNav(sec) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('sec-' + sec).classList.add('active');
+  document.getElementById('nav-' + sec).classList.add('active');
+  if (sec === 'clientes') cargarClientes();
+  if (sec === 'stats') cargarStats();
+  if (sec === 'servicios') cargarServiciosPanel();
+}
+
+async function cargarTurnos() {
+  const inicio = new Date(fechaActiva); inicio.setHours(0,0,0,0);
+  const fin = new Date(fechaActiva); fin.setHours(23,59,59,999);
+  const { data } = await db.from('turnos').select('*, servicios(nombre, precio)').gte('fecha_hora', inicio.toISOString()).lte('fecha_hora', fin.toISOString()).order('fecha_hora');
+  const cont = document.getElementById('lista-turnos');
+  if (!data || !data.length) {
+    cont.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>Sin turnos para este día</p></div>';
+    return;
+  }
+  cont.innerHTML = data.map(t => {
+    const dt = new Date(t.fecha_hora);
+    const h = dt.getHours().toString().padStart(2,'0');
+    const m = dt.getMinutes().toString().padStart(2,'0');
+    const estado = t.estado || 'confirmado';
+    return `<div class="turno-card">
+      <div class="turno-hora"><div class="h">${h}</div><div class="m">${m}</div></div>
+      <div class="turno-divider color-${estado}"></div>
+      <div class="turno-info">
+        <div class="turno-nombre">${t.cliente_nombre}</div>
+        <div class="turno-servicio">${t.servicios?.nombre || 'Servicio'}</div>
+        <div class="turno-precio">$${Number(t.servicios?.precio || 0).toLocaleString('es-AR')}</div>
+        <div class="turno-tel">📱 ${t.cliente_telefono}</div>
+        <span class="badge badge-${estado}">${estado.charAt(0).toUpperCase()+estado.slice(1)}</span>
+        <div class="turno-acciones">
+          ${estado !== 'confirmado' ? `<button class="btn btn-sm" onclick="cambiarEstado('${t.id}','confirmado')">Confirmar</button>` : ''}
+          ${estado !== 'cancelado' ? `<button class="btn btn-sm btn-danger" onclick="cambiarEstado('${t.id}','cancelado')">Cancelar</button>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function cambiarEstado(id, estado) {
+  await db.from('turnos').update({ estado }).eq('id', id);
+  cargarTurnos();
+}
+
+async function cargarClientes() {
+  const { data } = await db.from('turnos').select('cliente_nombre, cliente_telefono, servicio_id, created_at').order('created_at', {ascending: false});
+  const cont = document.getElementById('lista-clientes');
+  if (!data || !data.length) { cont.innerHTML = '<p style="text-align:center;color:#aaa;padding:1rem;font-size:14px">Sin clientes aún</p>'; return; }
+  const unicos = {};
+  data.forEach(t => {
+    if (!unicos[t.cliente_telefono]) unicos[t.cliente_telefono] = { ...t, visitas: 1 };
+    else unicos[t.cliente_telefono].visitas++;
+  });
+  cont.innerHTML = Object.values(unicos).map(c => {
+    const ini = c.cliente_nombre.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+    return `<div class="cliente-item">
+      <div class="cliente-avatar">${ini}</div>
+      <div class="cliente-info">
+        <div class="cliente-nombre">${c.cliente_nombre}</div>
+        <div class="cliente-datos">📱 ${c.cliente_telefono}</div>
+      </div>
+      <div class="cliente-badge">${c.visitas} ${c.visitas === 1 ? 'visita' : 'visitas'}</div>
+    </div>`;
+  }).join('');
+}
+
+async function cargarStats() {
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const finHoy = new Date(); finHoy.setHours(23,59,59,999);
+  const lunes = getLunes(0);
+  const mesInicio = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+  const [rHoy, rSemana, rMes] = await Promise.all([
+    db.from('turnos').select('*, servicios(precio)', {count:'exact'}).gte('fecha_hora', hoy.toISOString()).lte('fecha_hora', finHoy.toISOString()),
+    db.from('turnos').select('*', {count:'exact', head:true}).gte('fecha_hora', lunes.toISOString()),
+    db.from('turnos').select('*', {count:'exact', head:true}).gte('fecha_hora', mesInicio.toISOString()),
+  ]);
+  document.getElementById('m-hoy').textContent = rHoy.count || 0;
+  document.getElementById('m-semana').textContent = rSemana.count || 0;
+  document.getElementById('m-mes').textContent = rMes.count || 0;
+  let ingresos = 0;
+  if (rHoy.data) rHoy.data.forEach(t => { ingresos += Number(t.servicios?.precio || 0); });
+  document.getElementById('m-ingresos').textContent = '$' + ingresos.toLocaleString('es-AR');
+  const { data: topData } = await db.from('turnos').select('servicios(nombre)');
+  const conteo = {};
+  if (topData) topData.forEach(t => { const n = t.servicios?.nombre; if (n) conteo[n] = (conteo[n]||0)+1; });
+  const sorted = Object.entries(conteo).sort((a,b) => b[1]-a[1]).slice(0,5);
+  const topCont = document.getElementById('top-servicios');
+  topCont.innerHTML = sorted.length ? sorted.map(([n,c]) => `<div class="servicio-row"><span style="font-size:14px">${n}</span><span style="font-weight:700;color:#7F77DD">${c} turnos</span></div>`).join('') : '<p style="text-align:center;color:#aaa;font-size:14px;padding:1rem">Sin datos aún</p>';
+}
+
+async function cargarServiciosPanel() {
+  const { data } = await db.from('servicios').select('*').eq('activo', true);
+  const cont = document.getElementById('lista-servicios');
+  if (!data || !data.length) { cont.innerHTML = '<p style="text-align:center;color:#aaa;font-size:14px;padding:1rem">Sin servicios cargados</p>'; return; }
+  cont.innerHTML = data.map(s => `<div class="servicio-row">
+    <div><div style="font-size:14px;font-weight:700">${s.nombre}</div><div style="font-size:12px;color:#aaa">${s.duracion_minutos} min</div></div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="precio-pill">$${Number(s.precio).toLocaleString('es-AR')}</div>
+      <button class="btn btn-sm btn-danger" onclick="eliminarServicio('${s.id}')">✕</button>
+    </div>
+  </div>`).join('');
+}
+
+async function agregarServicio() {
+  const nombre = document.getElementById('srv-nombre').value.trim();
+  const desc = document.getElementById('srv-desc').value.trim();
+  const dur = parseInt(document.getElementById('srv-dur').value);
+  const precio = parseFloat(document.getElementById('srv-precio').value);
+  const alerta = document.getElementById('alert-servicio');
+  if (!nombre || !dur || !precio) { alerta.innerHTML = '<div class="alert alert-error">Completá nombre, duración y precio.</div>'; return; }
+  const { error } = await db.from('servicios').insert([{ nombre, descripcion: desc, duracion_minutos: dur, precio, activo: true }]);
+  if (error) { alerta.innerHTML = '<div class="alert alert-error">Error al guardar.</div>'; return; }
+  alerta.innerHTML = '<div class="alert" style="background:#EAF3DE;color:#27500A">✓ Servicio agregado.</div>';
+  document.getElementById('srv-nombre').value = '';
+  document.getElementById('srv-desc').value = '';
+  document.getElementById('srv-dur').value = '';
+  document.getElementById('srv-precio').value = '';
+  setTimeout(() => { alerta.innerHTML = ''; cargarServiciosPanel(); }, 1500);
+}
+
+async function eliminarServicio(id) {
+  if (!confirm('¿Eliminar este servicio?')) return;
+  await db.from('servicios').update({ activo: false }).eq('id', id);
+  cargarServiciosPanel();
+}
+</script>
+</body>
+</html>
