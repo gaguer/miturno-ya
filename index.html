@@ -191,10 +191,25 @@ function seleccionarEmpleado(id, nombre) {
   document.getElementById('paso-fecha').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function renderCalendario() {
+let diasBloqueadosCalendario = [];
+
+async function renderCalendario() {
   const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   document.getElementById('cal-titulo').textContent = meses[calMes] + ' ' + calAnio;
   const hoy = new Date(); hoy.setHours(0,0,0,0);
+
+  // Cargar días bloqueados del mes
+  const mesStr = `${calAnio}-${String(calMes+1).padStart(2,'0')}`;
+  const { data: bloqueos } = await db.from('dias_bloqueados').select('fecha, empleado_id').like('fecha', mesStr+'%');
+  diasBloqueadosCalendario = bloqueos ? bloqueos.map(b=>b.fecha) : [];
+
+  // Cargar días que trabaja el empleado seleccionado
+  let diasTrabaja = [0,1,2,3,4,5,6]; // por defecto todos
+  if(selEmpleado?.id) {
+    const { data: horarios } = await db.from('empleado_horarios').select('*').eq('empleado_id', selEmpleado.id).eq('activo', true);
+    if(horarios) diasTrabaja = horarios.map(h=>h.dia_semana);
+  }
+
   const primerDia = new Date(calAnio, calMes, 1).getDay();
   const diasEnMes = new Date(calAnio, calMes + 1, 0).getDate();
   const offset = primerDia === 0 ? 6 : primerDia - 1;
@@ -202,12 +217,22 @@ function renderCalendario() {
   for (let i = 0; i < offset; i++) html += '<div class="cal-day empty"></div>';
   for (let d = 1; d <= diasEnMes; d++) {
     const fecha = new Date(calAnio, calMes, d);
+    const fechaStr = `${calAnio}-${String(calMes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isHoy = fecha.toDateString() === hoy.toDateString();
     const isPasado = fecha < hoy;
     const isSel = selFecha && fecha.toDateString() === selFecha.toDateString();
-    html += `<div class="cal-day ${isPasado ? 'disabled' : ''} ${isHoy ? 'today' : ''} ${isSel ? 'selected' : ''}" onclick="seleccionarFecha(${calAnio},${calMes},${d})">${d}</div>`;
+    const isBloqueado = diasBloqueadosCalendario.includes(fechaStr);
+    // dia de semana: 0=lunes en nuestro sistema
+    const diaSemana = fecha.getDay() === 0 ? 6 : fecha.getDay() - 1;
+    const noTrabaja = !diasTrabaja.includes(diaSemana);
+    const noDisponible = isPasado || isBloqueado || noTrabaja;
+    html += `<div class="cal-day ${noDisponible?'disabled':''} ${isHoy?'today':''} ${isSel?'selected':''} ${isBloqueado?'bloqueado':''}" 
+      onclick="${noDisponible?'':'seleccionarFecha('+calAnio+','+calMes+','+d+')'}" 
+      title="${isBloqueado?'Día bloqueado':noTrabaja?'No trabaja este día':''}"
+      style="${isBloqueado?'background:#FCEBEB;color:#E24B4A;':noTrabaja&&!isPasado?'background:#f5f5f5;color:#ccc;':''}">${d}</div>`;
   }
   document.getElementById('cal-grid').innerHTML = html;
+}ocument.getElementById('cal-grid').innerHTML = html;
 }
 
 function cambiarMes(dir) {
@@ -221,10 +246,36 @@ async function seleccionarFecha(a, m, d) {
   selFecha = new Date(a, m, d);
   selHorario = null;
   renderCalendario();
+
+  const fechaStr = `${a}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
   const inicio = new Date(a, m, d, 0, 0, 0).toISOString();
   const fin = new Date(a, m, d, 23, 59, 59).toISOString();
-  const { data } = await db.from('turnos').select('fecha_hora').gte('fecha_hora', inicio).lte('fecha_hora', fin);
-  turnosOcupados = data ? data.map(t => new Date(t.fecha_hora).toTimeString().slice(0,5)) : [];
+
+  const empId = selEmpleado?.id;
+
+  // Verificar si el día está bloqueado
+  const { data: bloqueos } = await db.from('dias_bloqueados').select('*')
+    .eq('fecha', fechaStr)
+    .or(`empleado_id.is.null,empleado_id.eq.${empId||'00000000-0000-0000-0000-000000000000'}`);
+
+  if(bloqueos && bloqueos.length > 0) {
+    const motivo = bloqueos[0].motivo || 'Día no disponible';
+    document.getElementById('paso-horario').style.display = 'block';
+    document.getElementById('horarios-grid').innerHTML = `<div style="grid-column:span 4;text-align:center;padding:1rem;background:#FCEBEB;border-radius:10px;color:#A32D2D;font-size:14px;font-weight:700">🚫 ${motivo}</div>`;
+    document.getElementById('paso-horario').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+
+  // Obtener turnos ocupados filtrados por empleado si hay preferencia
+  let query = db.from('turnos').select('fecha_hora, empleado_id').gte('fecha_hora', inicio).lte('fecha_hora', fin).neq('estado','cancelado');
+  const { data: turnosDelDia } = await query;
+
+  if(empId) {
+    turnosOcupados = turnosDelDia ? turnosDelDia.filter(t=>t.empleado_id===empId).map(t=>new Date(t.fecha_hora).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit',timeZone:'America/Argentina/Buenos_Aires'})) : [];
+  } else {
+    turnosOcupados = [];
+  }
+
   renderHorarios();
   document.getElementById('paso-horario').style.display = 'block';
   document.getElementById('paso-horario').scrollIntoView({ behavior: 'smooth', block: 'start' });
