@@ -178,6 +178,61 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
     </div>
   </div>
 
+  <div id="sec-ia" class="section">
+    <div class="card">
+      <h3>🤖 Generador de campañas con IA</h3>
+      <p style="font-size:13px;color:#888;margin-bottom:14px">Describí qué querés comunicar y la IA te genera el mensaje perfecto para WhatsApp.</p>
+      <div class="form-group">
+        <label>Tipo de campaña</label>
+        <select id="ia-tipo">
+          <option value="promocion">Promoción / descuento</option>
+          <option value="novedad">Novedad / nuevo servicio</option>
+          <option value="recordatorio">Recordatorio de turno</option>
+          <option value="fecha">Fecha especial</option>
+          <option value="reactivar">Reactivar clientes</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Nombre del negocio</label>
+        <input type="text" id="ia-negocio" placeholder="Ej: Salón Valentina" />
+      </div>
+      <div class="form-group">
+        <label>Detalle de la campaña</label>
+        <textarea id="ia-detalle" rows="3" placeholder="Ej: 30% de descuento en coloración todo marzo, solo para clientas frecuentes"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Tono del mensaje</label>
+        <select id="ia-tono">
+          <option value="amigable">Amigable y cercano</option>
+          <option value="profesional">Profesional</option>
+          <option value="urgente">Con urgencia</option>
+          <option value="divertido">Divertido y fresco</option>
+        </select>
+      </div>
+      <button class="btn" onclick="generarCampana()" id="btn-generar">✨ Generar mensaje con IA</button>
+    </div>
+
+    <div id="resultado-ia" style="display:none">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h3 style="margin-bottom:0">Mensaje generado</h3>
+          <button class="btn btn-sm btn-green" onclick="copiarMensaje()">📋 Copiar</button>
+        </div>
+        <div id="mensaje-generado" style="background:#f8f8f8;border-radius:10px;padding:14px;font-size:14px;line-height:1.7;white-space:pre-wrap;color:#1a1a1a"></div>
+        <div id="copy-ok" style="display:none;text-align:center;color:#27500A;font-size:13px;margin-top:8px;font-weight:700">✓ ¡Copiado! Listo para pegar en WhatsApp</div>
+      </div>
+      <div class="card">
+        <h3>¿No te convenció? Generá otra versión</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button class="btn btn-outline" onclick="generarVariante('mas corto')">Más corto</button>
+          <button class="btn btn-outline" onclick="generarVariante('mas largo y detallado')">Más largo</button>
+          <button class="btn btn-outline" onclick="generarVariante('mas formal')">Más formal</button>
+          <button class="btn btn-outline" onclick="generarVariante('mas divertido con emojis')">Con más emojis</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
   <div id="sec-stock" class="section">
     <div class="stock-filtros">
       <button class="filtro-btn active" onclick="filtrarStock('todos', this)">Todos</button>
@@ -227,8 +282,8 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
       <div class="nav-item active" id="nav-agenda" onclick="showNav('agenda')"><span class="nav-icon">📅</span>Agenda</div>
       <div class="nav-item" id="nav-clientes" onclick="showNav('clientes')"><span class="nav-icon">👥</span>Clientes</div>
       <div class="nav-item" id="nav-stats" onclick="showNav('stats')"><span class="nav-icon">📊</span>Stats</div>
-      <div class="nav-item" id="nav-servicios" onclick="showNav('servicios')"><span class="nav-icon">✂️</span>Servicios</div>
       <div class="nav-item" id="nav-stock" onclick="showNav('stock')"><span class="nav-icon">📦</span>Stock</div>
+      <div class="nav-item" id="nav-ia" onclick="showNav('ia')"><span class="nav-icon">🤖</span>IA</div>
     </div>
   </div>
 </div>
@@ -287,6 +342,7 @@ function showNav(sec) {
   if(sec==='stats') cargarStats();
   if(sec==='servicios') cargarServiciosPanel();
   if(sec==='stock') cargarStock();
+  if(sec==='ia') {};
 }
 
 async function cargarTurnos() {
@@ -503,6 +559,75 @@ function toggleScanner() {
 function detenerScanner() {
   if(scannerActivo){Quagga.stop();scannerActivo=false;}
   document.getElementById('scanner-container').style.display='none';
+}
+  let ultimoPrompt = '';
+
+async function generarCampana() {
+  const tipo = document.getElementById('ia-tipo').value;
+  const negocio = document.getElementById('ia-negocio').value.trim() || 'el negocio';
+  const detalle = document.getElementById('ia-detalle').value.trim();
+  const tono = document.getElementById('ia-tono').value;
+  if (!detalle) { alert('Describí el detalle de la campaña.'); return; }
+
+  const tipos = {
+    promocion: 'una promoción o descuento',
+    novedad: 'una novedad o nuevo servicio',
+    recordatorio: 'un recordatorio de turno',
+    fecha: 'una fecha especial',
+    reactivar: 'reactivar clientes que no vienen hace tiempo'
+  };
+  const tonos = {
+    amigable: 'amigable, cercano y cálido',
+    profesional: 'profesional y elegante',
+    urgente: 'con sentido de urgencia',
+    divertido: 'divertido, fresco y con emojis'
+  };
+
+  ultimoPrompt = `Sos un experto en marketing para negocios de belleza y estética. Generá un mensaje de WhatsApp para ${negocio} sobre ${tipos[tipo]}. Detalle: ${detalle}. El tono debe ser ${tonos[tono]}. El mensaje debe ser natural, no muy largo, listo para enviar por WhatsApp. Incluí emojis apropiados. No agregues explicaciones, solo el mensaje.`;
+
+  await llamarIA(ultimoPrompt);
+}
+
+async function generarVariante(instruccion) {
+  if (!ultimoPrompt) return;
+  await llamarIA(ultimoPrompt + ` Ahora generá una versión ${instruccion} del mismo mensaje.`);
+}
+
+async function llamarIA(prompt) {
+  const btn = document.getElementById('btn-generar');
+  btn.textContent = '⏳ Generando...';
+  btn.disabled = true;
+  document.getElementById('resultado-ia').style.display = 'none';
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await response.json();
+    const texto = data.content?.[0]?.text || 'No se pudo generar el mensaje.';
+    document.getElementById('mensaje-generado').textContent = texto;
+    document.getElementById('resultado-ia').style.display = 'block';
+    document.getElementById('copy-ok').style.display = 'none';
+  } catch(e) {
+    alert('Error al conectar con la IA. Intentá de nuevo.');
+  }
+
+  btn.textContent = '✨ Generar mensaje con IA';
+  btn.disabled = false;
+}
+
+function copiarMensaje() {
+  const texto = document.getElementById('mensaje-generado').textContent;
+  navigator.clipboard.writeText(texto).then(() => {
+    document.getElementById('copy-ok').style.display = 'block';
+    setTimeout(() => document.getElementById('copy-ok').style.display = 'none', 3000);
+  });
 }
 </script>
 </body>
