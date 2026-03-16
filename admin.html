@@ -380,7 +380,7 @@ function mostrarAdmin() {
   document.getElementById('admin-app').style.display = 'block';
   document.getElementById('admin-header').style.display = 'block';
   document.getElementById('bottom-nav').style.display = 'block';
-  renderWeekStrip(); cargarTurnos();
+  renderWeekStrip(); cargarTurnos(); cargarConfig();
 }
 if (sessionStorage.getItem('mty_admin')) mostrarAdmin();
 
