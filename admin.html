@@ -88,8 +88,6 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
 .servicio-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f5f5f5; }
 .servicio-row:last-child { border-bottom: none; }
 .precio-pill { background: #EEEDFE; color: #3C3489; font-size: 14px; font-weight: 800; padding: 6px 12px; border-radius: 10px; }
-
-/* STOCK */
 .producto-card { background: white; border-radius: 12px; padding: 14px; margin-bottom: 10px; border-left: 4px solid #639922; }
 .producto-card.stock-bajo { border-left-color: #E24B4A; }
 .producto-card.stock-medio { border-left-color: #BA7517; }
@@ -109,7 +107,7 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
 .filtro-btn.active { background: #7F77DD; color: white; border-color: #7F77DD; }
 .scanner-box { background: #1a1a1a; border-radius: 12px; overflow: hidden; margin-bottom: 12px; position: relative; min-height: 200px; display: flex; align-items: center; justify-content: center; }
 .scanner-box video { width: 100%; display: block; }
-.scanner-line { position: absolute; top: 50%; left: 10%; right: 10%; height: 2px; background: #7F77DD; box-shadow: 0 0 8px #7F77DD; }
+.scanner-line { position: absolute; top: 50%; left: 10%; right: 10%; height: 2px; background: #7F77DD; }
 .scanner-label { position: absolute; bottom: 12px; left: 0; right: 0; text-align: center; color: white; font-size: 12px; }
 #scanner-result { background: #EEEDFE; border-radius: 10px; padding: 12px; text-align: center; font-size: 14px; color: #3C3489; font-weight: 700; display: none; margin-bottom: 12px; }
 .historial-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; }
@@ -182,8 +180,7 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
     <div class="card">
       <h3>🤖 Generador de campañas con IA</h3>
       <p style="font-size:13px;color:#888;margin-bottom:14px">Describí qué querés comunicar y la IA te genera el mensaje perfecto para WhatsApp.</p>
-      <div class="form-group">
-        <label>Tipo de campaña</label>
+      <div class="form-group"><label>Tipo de campaña</label>
         <select id="ia-tipo">
           <option value="promocion">Promoción / descuento</option>
           <option value="novedad">Novedad / nuevo servicio</option>
@@ -192,16 +189,9 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
           <option value="reactivar">Reactivar clientes</option>
         </select>
       </div>
-      <div class="form-group">
-        <label>Nombre del negocio</label>
-        <input type="text" id="ia-negocio" placeholder="Ej: Salón Valentina" />
-      </div>
-      <div class="form-group">
-        <label>Detalle de la campaña</label>
-        <textarea id="ia-detalle" rows="3" placeholder="Ej: 30% de descuento en coloración todo marzo, solo para clientas frecuentes"></textarea>
-      </div>
-      <div class="form-group">
-        <label>Tono del mensaje</label>
+      <div class="form-group"><label>Nombre del negocio</label><input type="text" id="ia-negocio" placeholder="Ej: Salón Valentina" /></div>
+      <div class="form-group"><label>Detalle de la campaña</label><textarea id="ia-detalle" rows="3" placeholder="Ej: 30% de descuento en coloración todo marzo"></textarea></div>
+      <div class="form-group"><label>Tono del mensaje</label>
         <select id="ia-tono">
           <option value="amigable">Amigable y cercano</option>
           <option value="profesional">Profesional</option>
@@ -211,7 +201,6 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
       </div>
       <button class="btn" onclick="generarCampana()" id="btn-generar">✨ Generar mensaje con IA</button>
     </div>
-
     <div id="resultado-ia" style="display:none">
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -219,7 +208,7 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
           <button class="btn btn-sm btn-green" onclick="copiarMensaje()">📋 Copiar</button>
         </div>
         <div id="mensaje-generado" style="background:#f8f8f8;border-radius:10px;padding:14px;font-size:14px;line-height:1.7;white-space:pre-wrap;color:#1a1a1a"></div>
-        <div id="copy-ok" style="display:none;text-align:center;color:#27500A;font-size:13px;margin-top:8px;font-weight:700">✓ ¡Copiado! Listo para pegar en WhatsApp</div>
+        <div id="copy-ok" style="display:none;text-align:center;color:#27500A;font-size:13px;margin-top:8px;font-weight:700">✓ ¡Copiado!</div>
       </div>
       <div class="card">
         <h3>¿No te convenció? Generá otra versión</h3>
@@ -232,10 +221,11 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
       </div>
     </div>
   </div>
+
   <div id="sec-config" class="section">
     <div class="card">
       <h3>⚙️ Configuración del negocio</h3>
-      <p style="font-size:13px;color:#888;margin-bottom:14px">Estos son los días y horarios generales. Se aplican cuando el cliente elige "Sin preferencia".</p>
+      <p style="font-size:13px;color:#888;margin-bottom:14px">Días y horarios generales. Se aplican cuando el cliente elige "Sin preferencia".</p>
       <div id="alert-config"></div>
       <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Días que abre el negocio</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px" id="config-dias"></div>
@@ -269,14 +259,14 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
       </div>
       <button class="btn" onclick="guardarConfig()">Guardar configuración</button>
     </div>
-
     <div class="card">
       <h3>⏰ Horarios por empleado</h3>
       <p style="font-size:13px;color:#888;margin-bottom:14px">Configurá el horario específico de cada profesional por día.</p>
       <div id="horarios-empleados"></div>
     </div>
   </div>
-<div id="sec-equipo" class="section">
+
+  <div id="sec-equipo" class="section">
     <div class="card">
       <h3>Equipo activo</h3>
       <div id="lista-equipo"><div style="text-align:center;color:#aaa;padding:1rem;font-size:14px">Cargando...</div></div>
@@ -295,15 +285,12 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
       <div id="lista-bloqueados" style="margin-bottom:14px"></div>
       <div id="alert-bloqueo"></div>
       <div class="form-group"><label>Fecha a bloquear</label><input type="date" id="bl-fecha" /></div>
-      <div class="form-group"><label>Motivo</label><input type="text" id="bl-motivo" placeholder="Ej: Feriado nacional, Vacaciones" /></div>
-      <div class="form-group"><label>¿Para quién?</label>
-        <select id="bl-empleado">
-          <option value="">Todo el negocio</option>
-        </select>
-      </div>
+      <div class="form-group"><label>Motivo</label><input type="text" id="bl-motivo" placeholder="Ej: Feriado nacional" /></div>
+      <div class="form-group"><label>¿Para quién?</label><select id="bl-empleado"><option value="">Todo el negocio</option></select></div>
       <button class="btn" onclick="agregarBloqueo()">Bloquear día</button>
     </div>
   </div>
+
   <div id="sec-stock" class="section">
     <div class="stock-filtros">
       <button class="filtro-btn active" onclick="filtrarStock('todos', this)">Todos</button>
@@ -340,7 +327,7 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
         </select>
       </div>
       <div class="form-group"><label>Precio de costo</label><input type="number" id="p-costo" placeholder="Ej: 1200" /></div>
-      <div class="form-group"><label>Precio de venta</label><input type="number" id="p-venta" placeholder="Ej: 2800 (0 si es insumo)" /></div>
+      <div class="form-group"><label>Precio de venta</label><input type="number" id="p-venta" placeholder="Ej: 2800" /></div>
       <div class="form-group"><label>Cantidad inicial</label><input type="number" id="p-cantidad" placeholder="Ej: 10" /></div>
       <div class="form-group"><label>Alerta cuando quede menos de</label><input type="number" id="p-minimo" placeholder="Ej: 5" /></div>
       <div class="form-group"><label>Proveedor</label><input type="text" id="p-proveedor" placeholder="Ej: Distribuidora Norte" /></div>
@@ -348,15 +335,16 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
     </div>
   </div>
 
- <div class="bottom-nav" id="bottom-nav">
+  <div class="bottom-nav" id="bottom-nav">
     <div class="nav-row">
-     <div class="nav-item active" id="nav-agenda" onclick="showNav('agenda')"><span class="nav-icon">📅</span>Agenda</div>
+      <div class="nav-item active" id="nav-agenda" onclick="showNav('agenda')"><span class="nav-icon">📅</span>Agenda</div>
       <div class="nav-item" id="nav-clientes" onclick="showNav('clientes')"><span class="nav-icon">👥</span>Clientes</div>
       <div class="nav-item" id="nav-equipo" onclick="showNav('equipo')"><span class="nav-icon">👩‍💼</span>Equipo</div>
       <div class="nav-item" id="nav-config" onclick="showNav('config')"><span class="nav-icon">⚙️</span>Config</div>
       <div class="nav-item" id="nav-ia" onclick="showNav('ia')"><span class="nav-icon">🤖</span>IA</div>
     </div>
   </div>
+</div>
 
 <script>
 const SUPABASE_URL = 'https://qivbrddsmamxsszacjhv.supabase.co';
@@ -366,7 +354,10 @@ const ADMIN_PASS = 'miturno2024';
 const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+const DIAS_NOMBRES = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
 let fechaActiva = new Date(), semanaOffset = 0, scannerActivo = false, todosProductos = [];
+let diasAbierto = [0,1,2,3,4,5], esHorarioPartido = false;
+let ultimoPrompt = '';
 
 function doLogin() {
   const u = document.getElementById('login-user').value.trim();
@@ -414,7 +405,6 @@ function showNav(sec) {
   if(sec==='stock') cargarStock();
   if(sec==='equipo') { cargarEquipo(); cargarBloqueados(); }
   if(sec==='config') cargarConfig();
-  if(sec==='ia') {};
 }
 
 async function cargarTurnos() {
@@ -426,20 +416,14 @@ async function cargarTurnos() {
   ]);
   const cont=document.getElementById('lista-turnos');
   if(!turnos||!turnos.length){cont.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><p>Sin turnos para este día</p></div>';return;}
-
-  if(!empleados||empleados.length<=1){
-    cont.innerHTML=renderTurnosList(turnos); return;
-  }
-
-  // Vista columnas por empleado
+  if(!empleados||empleados.length<=1){cont.innerHTML=renderTurnosList(turnos);return;}
   const sinAsignar = turnos.filter(t=>!t.empleado_id);
   let html = '<div style="display:grid;grid-template-columns:'+empleados.map(()=>'1fr').join(' ')+';gap:10px;margin-bottom:10px">';
   empleados.forEach(emp=>{
     const turnosEmp = turnos.filter(t=>t.empleado_id===emp.id);
     html += `<div style="background:#EEEDFE;border-radius:10px;padding:8px;text-align:center;font-size:13px;font-weight:700;color:#3C3489">${emp.nombre}<br><span style="font-size:11px;font-weight:400;color:#7F77DD">${turnosEmp.length} turnos</span></div>`;
   });
-  html += '</div>';
-  html += '<div style="display:grid;grid-template-columns:'+empleados.map(()=>'1fr').join(' ')+';gap:10px">';
+  html += '</div><div style="display:grid;grid-template-columns:'+empleados.map(()=>'1fr').join(' ')+';gap:10px">';
   empleados.forEach(emp=>{
     const turnosEmp = turnos.filter(t=>t.empleado_id===emp.id);
     html += '<div>';
@@ -448,9 +432,8 @@ async function cargarTurnos() {
     html += '</div>';
   });
   html += '</div>';
-
   if(sinAsignar.length){
-    html += '<div style="margin-top:12px"><div style="font-size:12px;font-weight:700;color:#888;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Sin profesional asignado</div>';
+    html += '<div style="margin-top:12px"><div style="font-size:12px;font-weight:700;color:#888;margin-bottom:8px;text-transform:uppercase">Sin profesional asignado</div>';
     html += renderTurnosList(sinAsignar);
     html += '</div>';
   }
@@ -534,13 +517,10 @@ async function agregarServicio() {
 }
 async function eliminarServicio(id){if(!confirm('¿Eliminar este servicio?'))return;await db.from('servicios').update({activo:false}).eq('id',id);cargarServiciosPanel();}
 
-// STOCK
 async function cargarStock(filtro='todos') {
   const {data}=await db.from('productos').select('*').eq('activo',true).order('nombre');
-  todosProductos=data||[];
-  renderProductos(filtro);
+  todosProductos=data||[]; renderProductos(filtro);
 }
-
 function renderProductos(filtro) {
   let lista=todosProductos;
   if(filtro==='bajo') lista=lista.filter(p=>p.cantidad<=p.cantidad_minima);
@@ -551,10 +531,8 @@ function renderProductos(filtro) {
   cont.innerHTML=lista.map(p=>{
     const nivel=p.cantidad<=p.cantidad_minima?'bajo':p.cantidad<=p.cantidad_minima*2?'medio':'ok';
     return `<div class="producto-card stock-${nivel==='ok'?'':nivel}">
-      <div class="producto-header">
-        <div><div class="producto-nombre">${p.nombre}</div><div class="producto-cat">${p.categoria} · ${p.tipo==='venta'?'Para venta':'Insumo'}</div></div>
-        <div class="stock-badge stock-${nivel==='ok'?'ok':nivel+'-badge'}">${p.cantidad} und</div>
-      </div>
+      <div class="producto-header"><div><div class="producto-nombre">${p.nombre}</div><div class="producto-cat">${p.categoria} · ${p.tipo==='venta'?'Para venta':'Insumo'}</div></div>
+      <div class="stock-badge stock-${nivel==='ok'?'ok':nivel+'-badge'}">${p.cantidad} und</div></div>
       <div class="producto-detalles">
         <div class="detalle-item">Costo<span>$${Number(p.precio_costo||0).toLocaleString('es-AR')}</span></div>
         <div class="detalle-item">Venta<span>${p.precio_venta?'$'+Number(p.precio_venta).toLocaleString('es-AR'):'-'}</span></div>
@@ -569,13 +547,10 @@ function renderProductos(filtro) {
     </div>`;
   }).join('');
 }
-
 function filtrarStock(filtro, el) {
   document.querySelectorAll('.filtro-btn').forEach(b=>b.classList.remove('active'));
-  el.classList.add('active');
-  renderProductos(filtro);
+  el.classList.add('active'); renderProductos(filtro);
 }
-
 async function moverStock(id, tipo, cantidad) {
   const cant = parseInt(prompt(`¿Cuántas unidades de ${tipo==='entrada'?'entrada':'salida'}?`, cantidad));
   if(!cant||cant<=0) return;
@@ -588,7 +563,6 @@ async function moverStock(id, tipo, cantidad) {
   ]);
   cargarStock();
 }
-
 async function verHistorial(id, nombre) {
   const {data}=await db.from('stock_movimientos').select('*').eq('producto_id',id).order('created_at',{ascending:false}).limit(20);
   if(!data||!data.length){alert('Sin movimientos registrados para '+nombre);return;}
@@ -599,14 +573,10 @@ async function verHistorial(id, nombre) {
       <div style="font-size:16px;font-weight:800">Historial — ${nombre}</div>
       <button onclick="this.closest('div[style]').remove()" style="background:#f0f0f5;border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px">Cerrar</button>
     </div>
-    ${data.map(m=>`<div class="historial-item">
-      <div><span class="${m.tipo==='entrada'?'mov-entrada':'mov-salida'}">${m.tipo==='entrada'?'↑ Entrada':'↓ Salida'} ${m.cantidad} und</span><div style="font-size:11px;color:#aaa">${m.motivo||'Sin motivo'}</div></div>
-      <div style="font-size:11px;color:#aaa">${new Date(m.created_at).toLocaleDateString('es-AR')}</div>
-    </div>`).join('')}
+    ${data.map(m=>`<div class="historial-item"><div><span class="${m.tipo==='entrada'?'mov-entrada':'mov-salida'}">${m.tipo==='entrada'?'↑ Entrada':'↓ Salida'} ${m.cantidad} und</span><div style="font-size:11px;color:#aaa">${m.motivo||'Sin motivo'}</div></div><div style="font-size:11px;color:#aaa">${new Date(m.created_at).toLocaleDateString('es-AR')}</div></div>`).join('')}
   </div>`;
   document.body.appendChild(modal);
 }
-
 async function agregarProducto() {
   const alerta = document.getElementById('alert-producto');
   const nombre = document.getElementById('p-nombre').value.trim();
@@ -618,38 +588,16 @@ async function agregarProducto() {
   const cantidad = parseInt(document.getElementById('p-cantidad').value) || 0;
   const minimo = parseInt(document.getElementById('p-minimo').value) || 5;
   const proveedor = document.getElementById('p-proveedor').value.trim();
-
-  if (!nombre) {
-    alerta.innerHTML = '<div class="alert alert-error">El nombre es obligatorio.</div>';
-    return;
-  }
-
+  if (!nombre) { alerta.innerHTML = '<div class="alert alert-error">El nombre es obligatorio.</div>'; return; }
   alerta.innerHTML = '<div class="alert" style="background:#EEEDFE;color:#3C3489">Guardando...</div>';
-
-  const { data: nuevoProd, error } = await db.from('productos').insert([{
-    nombre, codigo_barras: codigo, categoria: cat, tipo,
-    precio_costo: costo, precio_venta: venta,
-    cantidad, cantidad_minima: minimo, proveedor, activo: true
-  }]).select().single();
-
-  if (error) {
-    alerta.innerHTML = '<div class="alert alert-error">Error: ' + error.message + '</div>';
-    return;
-  }
-
-  if (cantidad > 0 && nuevoProd) {
-    await db.from('stock_movimientos').insert([{
-      producto_id: nuevoProd.id, tipo: 'entrada',
-      cantidad, motivo: 'Stock inicial'
-    }]);
-  }
-
+  const { data: nuevoProd, error } = await db.from('productos').insert([{ nombre, codigo_barras: codigo, categoria: cat, tipo, precio_costo: costo, precio_venta: venta, cantidad, cantidad_minima: minimo, proveedor, activo: true }]).select().single();
+  if (error) { alerta.innerHTML = '<div class="alert alert-error">Error: ' + error.message + '</div>'; return; }
+  if (cantidad > 0 && nuevoProd) await db.from('stock_movimientos').insert([{ producto_id: nuevoProd.id, tipo: 'entrada', cantidad, motivo: 'Stock inicial' }]);
   alerta.innerHTML = '<div class="alert alert-success">✓ Producto agregado correctamente.</div>';
   ['p-nombre','p-codigo','p-costo','p-venta','p-cantidad','p-minimo','p-proveedor'].forEach(id => document.getElementById(id).value = '');
   setTimeout(() => { alerta.innerHTML = ''; cargarStock(); }, 2000);
   if (scannerActivo) detenerScanner();
 }
-
 function toggleScanner() {
   const cont=document.getElementById('scanner-container');
   if(scannerActivo){detenerScanner();return;}
@@ -666,12 +614,10 @@ function toggleScanner() {
     detenerScanner();
   });
 }
-
 function detenerScanner() {
   if(scannerActivo){Quagga.stop();scannerActivo=false;}
   document.getElementById('scanner-container').style.display='none';
 }
-  let ultimoPrompt = '';
 
 async function generarCampana() {
   const tipo = document.getElementById('ia-tipo').value;
@@ -679,70 +625,39 @@ async function generarCampana() {
   const detalle = document.getElementById('ia-detalle').value.trim();
   const tono = document.getElementById('ia-tono').value;
   if (!detalle) { alert('Describí el detalle de la campaña.'); return; }
-
-  const tipos = {
-    promocion: 'una promoción o descuento',
-    novedad: 'una novedad o nuevo servicio',
-    recordatorio: 'un recordatorio de turno',
-    fecha: 'una fecha especial',
-    reactivar: 'reactivar clientes que no vienen hace tiempo'
-  };
-  const tonos = {
-    amigable: 'amigable, cercano y cálido',
-    profesional: 'profesional y elegante',
-    urgente: 'con sentido de urgencia',
-    divertido: 'divertido, fresco y con emojis'
-  };
-
+  const tipos = { promocion:'una promoción o descuento', novedad:'una novedad o nuevo servicio', recordatorio:'un recordatorio de turno', fecha:'una fecha especial', reactivar:'reactivar clientes que no vienen hace tiempo' };
+  const tonos = { amigable:'amigable, cercano y cálido', profesional:'profesional y elegante', urgente:'con sentido de urgencia', divertido:'divertido, fresco y con emojis' };
   ultimoPrompt = `Sos un experto en marketing para negocios de belleza y estética. Generá un mensaje de WhatsApp para ${negocio} sobre ${tipos[tipo]}. Detalle: ${detalle}. El tono debe ser ${tonos[tono]}. El mensaje debe ser natural, no muy largo, listo para enviar por WhatsApp. Incluí emojis apropiados. No agregues explicaciones, solo el mensaje.`;
-
   await llamarIA(ultimoPrompt);
 }
-
 async function generarVariante(instruccion) {
   if (!ultimoPrompt) return;
   await llamarIA(ultimoPrompt + ` Ahora generá una versión ${instruccion} del mismo mensaje.`);
 }
-
 async function llamarIA(prompt) {
   const btn = document.getElementById('btn-generar');
-  btn.textContent = '⏳ Generando...';
-  btn.disabled = true;
+  btn.textContent = '⏳ Generando...'; btn.disabled = true;
   document.getElementById('resultado-ia').style.display = 'none';
-
   try {
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt })
-    });
+    const response = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) });
     const data = await response.json();
-    const texto = data.texto || 'No se pudo generar el mensaje.';
-    document.getElementById('mensaje-generado').textContent = texto;
+    document.getElementById('mensaje-generado').textContent = data.texto || 'No se pudo generar el mensaje.';
     document.getElementById('resultado-ia').style.display = 'block';
     document.getElementById('copy-ok').style.display = 'none';
-  } catch(e) {
-    alert('Error al conectar con la IA. Intentá de nuevo.');
-  }
-
-  btn.textContent = '✨ Generar mensaje con IA';
-  btn.disabled = false;
+  } catch(e) { alert('Error al conectar con la IA. Intentá de nuevo.'); }
+  btn.textContent = '✨ Generar mensaje con IA'; btn.disabled = false;
 }
-
 function copiarMensaje() {
-  const texto = document.getElementById('mensaje-generado').textContent;
-  navigator.clipboard.writeText(texto).then(() => {
+  navigator.clipboard.writeText(document.getElementById('mensaje-generado').textContent).then(() => {
     document.getElementById('copy-ok').style.display = 'block';
     setTimeout(() => document.getElementById('copy-ok').style.display = 'none', 3000);
   });
 }
-const DIAS = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
 
 async function cargarEquipo() {
   const {data} = await db.from('empleados').select('*').order('nombre');
   const cont = document.getElementById('lista-equipo');
   if(!data||!data.length){cont.innerHTML='<p style="text-align:center;color:#aaa;padding:1rem;font-size:14px">Sin empleados cargados</p>';return;}
-  
   let html = '';
   for(const e of data) {
     const {data:horarios} = await db.from('empleado_horarios').select('*').eq('empleado_id',e.id);
@@ -750,10 +665,7 @@ async function cargarEquipo() {
     html += `<div style="border-bottom:1px solid #f5f5f5;padding:12px 0;">
       <div class="cliente-item" style="padding:0;border:none;margin-bottom:10px">
         <div class="cliente-avatar">${e.nombre.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase()}</div>
-        <div class="cliente-info">
-          <div class="cliente-nombre">${e.nombre}</div>
-          <div class="cliente-datos">${e.telefono||''} ${e.email?'· '+e.email:''}</div>
-        </div>
+        <div class="cliente-info"><div class="cliente-nombre">${e.nombre}</div><div class="cliente-datos">${e.telefono||''} ${e.email?'· '+e.email:''}</div></div>
         <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
           <span class="cliente-badge" style="${e.activo?'':'background:#FCEBEB;color:#A32D2D'}">${e.activo?'Activo':'Inactivo'}</span>
           <button class="btn btn-sm ${e.activo?'btn-danger':'btn-green'}" onclick="toggleEmpleado('${e.id}',${e.activo})">${e.activo?'Desactivar':'Activar'}</button>
@@ -761,7 +673,7 @@ async function cargarEquipo() {
       </div>
       <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Días que trabaja</div>
       <div style="display:flex;gap:4px;flex-wrap:wrap">
-        ${DIAS.map((d,i) => {
+        ${DIAS_NOMBRES.map((d,i) => {
           const activo = diasActivos.includes(i);
           const hId = horarios?.find(h=>h.dia_semana===i)?.id;
           return `<div onclick="toggleDiaEmpleado('${e.id}',${i},'${hId||''}',${activo})" style="padding:4px 8px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;background:${activo?'#7F77DD':'#f0f0f5'};color:${activo?'white':'#aaa'}">${d.slice(0,2)}</div>`;
@@ -771,16 +683,11 @@ async function cargarEquipo() {
   }
   cont.innerHTML = html;
 }
-
 async function toggleDiaEmpleado(empleadoId, dia, horarioId, activo) {
-  if(horarioId && horarioId !== 'undefined') {
-    await db.from('empleado_horarios').update({activo:!activo}).eq('id',horarioId);
-  } else {
-    await db.from('empleado_horarios').insert([{empleado_id:empleadoId, dia_semana:dia, activo:true}]);
-  }
+  if(horarioId && horarioId !== 'undefined') await db.from('empleado_horarios').update({activo:!activo}).eq('id',horarioId);
+  else await db.from('empleado_horarios').insert([{empleado_id:empleadoId, dia_semana:dia, activo:true}]);
   cargarEquipo();
 }
-
 async function agregarEmpleado() {
   const nombre = document.getElementById('eq-nombre').value.trim();
   const tel = document.getElementById('eq-tel').value.trim();
@@ -790,19 +697,15 @@ async function agregarEmpleado() {
   const {error} = await db.from('empleados').insert([{nombre, telefono:tel, email, activo:true}]);
   if(error){alerta.innerHTML='<div class="alert alert-error">Error al guardar.</div>';return;}
   alerta.innerHTML='<div class="alert alert-success">✓ Empleado agregado.</div>';
-  document.getElementById('eq-nombre').value='';
-  document.getElementById('eq-tel').value='';
-  document.getElementById('eq-email').value='';
+  document.getElementById('eq-nombre').value=''; document.getElementById('eq-tel').value=''; document.getElementById('eq-email').value='';
   setTimeout(()=>{alerta.innerHTML='';cargarEquipo();},1500);
 }
-
 async function toggleEmpleado(id, activo) {
-  const msg = activo ? '¿Desactivar este empleado? No aparecerá para nuevos turnos.' : '¿Activar este empleado?';
-  if(!confirm(msg)) return;
+  if(!confirm(activo?'¿Desactivar este empleado?':'¿Activar este empleado?')) return;
   await db.from('empleados').update({activo:!activo}).eq('id',id);
   cargarEquipo();
 }
-  async function cargarBloqueados() {
+async function cargarBloqueados() {
   const {data} = await db.from('dias_bloqueados').select('*, empleados(nombre)').order('fecha');
   const cont = document.getElementById('lista-bloqueados');
   const hoy = new Date().toISOString().split('T')[0];
@@ -816,13 +719,10 @@ async function toggleEmpleado(id, activo) {
       </div>
       <button class="btn btn-sm btn-danger" onclick="eliminarBloqueo('${d.id}')">✕</button>
     </div>`).join('');
-
-  // Cargar empleados en selector
   const {data:emps} = await db.from('empleados').select('*').eq('activo',true);
   const sel = document.getElementById('bl-empleado');
   sel.innerHTML = '<option value="">Todo el negocio</option>' + (emps||[]).map(e=>`<option value="${e.id}">${e.nombre}</option>`).join('');
 }
-
 async function agregarBloqueo() {
   const fecha = document.getElementById('bl-fecha').value;
   const motivo = document.getElementById('bl-motivo').value.trim();
@@ -832,23 +732,14 @@ async function agregarBloqueo() {
   const {error} = await db.from('dias_bloqueados').insert([{fecha, motivo, empleado_id}]);
   if(error){alerta.innerHTML='<div class="alert alert-error">Error al guardar.</div>';return;}
   alerta.innerHTML='<div class="alert alert-success">✓ Día bloqueado correctamente.</div>';
-  document.getElementById('bl-fecha').value='';
-  document.getElementById('bl-motivo').value='';
+  document.getElementById('bl-fecha').value=''; document.getElementById('bl-motivo').value='';
   setTimeout(()=>{alerta.innerHTML='';cargarBloqueados();},1500);
 }
-
 async function eliminarBloqueo(id) {
   if(!confirm('¿Eliminar este bloqueo?')) return;
   await db.from('dias_bloqueados').delete().eq('id',id);
   cargarBloqueados();
 }
-  const DIAS_NOMBRES = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
-let diasAbierto = [0,1,2,3,4,5];
-
-async function cargarConfig() {
-  const DIAS_NOMBRES = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
-let diasAbierto = [0,1,2,3,4,5];
-let esHorarioPartido = false;
 
 async function cargarConfig() {
   const {data} = await db.from('negocio_config').select('*');
@@ -867,7 +758,6 @@ async function cargarConfig() {
   renderConfigDias();
   cargarHorariosEmpleados();
 }
-
 function setTipoHorario(partido) {
   esHorarioPartido = partido;
   document.getElementById('btn-corrido').style.background = !partido ? '#7F77DD' : '#f0f0f5';
@@ -876,19 +766,16 @@ function setTipoHorario(partido) {
   document.getElementById('btn-partido').style.color = partido ? 'white' : '#aaa';
   document.getElementById('horario-partido-fields').style.display = partido ? 'block' : 'none';
 }
-
 function renderConfigDias() {
   document.getElementById('config-dias').innerHTML = DIAS_NOMBRES.map((d,i) => `
     <div onclick="toggleDiaConfig(${i})" style="padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;background:${diasAbierto.includes(i)?'#7F77DD':'#f0f0f5'};color:${diasAbierto.includes(i)?'white':'#aaa'}">${d.slice(0,2)}</div>
   `).join('');
 }
-
 function toggleDiaConfig(dia) {
   if(diasAbierto.includes(dia)) diasAbierto = diasAbierto.filter(d=>d!==dia);
   else diasAbierto.push(dia);
   renderConfigDias();
 }
-
 async function guardarConfig() {
   const inicio = document.getElementById('config-inicio').value;
   const fin = document.getElementById('config-fin').value;
@@ -911,7 +798,6 @@ async function guardarConfig() {
   alerta.innerHTML='<div class="alert alert-success">✓ Configuración guardada.</div>';
   setTimeout(()=>alerta.innerHTML='',2000);
 }
-
 async function cargarHorariosEmpleados() {
   const {data:empleados} = await db.from('empleados').select('*').eq('activo',true);
   if(!empleados||!empleados.length) return;
@@ -926,13 +812,13 @@ async function cargarHorariosEmpleados() {
         if(!h) return '';
         return `<div style="display:grid;grid-template-columns:60px 1fr;gap:8px;align-items:center;margin-bottom:6px">
           <div style="font-size:12px;font-weight:700;color:#7F77DD">${d.slice(0,2)}</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr ${h.horario_partido?'1fr 1fr':''};gap:6px">
-            <input type="time" value="${h.hora_inicio||'09:00'}" onchange="actualizarHorarioEmp('${h.id}','hora_inicio',this.value)" style="padding:6px;border:1px solid #eee;border-radius:6px;font-size:12px">
-            <input type="time" value="${h.hora_fin||'18:00'}" onchange="actualizarHorarioEmp('${h.id}','hora_fin',this.value)" style="padding:6px;border:1px solid #eee;border-radius:6px;font-size:12px">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <input type="time" value="${h.hora_inicio||'09:00'}" onchange="actualizarHorarioEmp('${h.id}','hora_inicio',this.value)" style="padding:6px;border:1px solid #eee;border-radius:6px;font-size:12px;width:90px">
+            <input type="time" value="${h.hora_fin||'18:00'}" onchange="actualizarHorarioEmp('${h.id}','hora_fin',this.value)" style="padding:6px;border:1px solid #eee;border-radius:6px;font-size:12px;width:90px">
             ${h.horario_partido?`
-            <input type="time" value="${h.hora_inicio_2||'18:00'}" onchange="actualizarHorarioEmp('${h.id}','hora_inicio_2',this.value)" style="padding:6px;border:1px solid #eee;border-radius:6px;font-size:12px">
-            <input type="time" value="${h.hora_fin_2||'22:00'}" onchange="actualizarHorarioEmp('${h.id}','hora_fin_2',this.value)" style="padding:6px;border:1px solid #eee;border-radius:6px;font-size:12px">`:''}
-            <div onclick="toggleHorarioPartidoEmp('${h.id}',${h.horario_partido})" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;background:${h.horario_partido?'#7F77DD':'#f0f0f5'};color:${h.horario_partido?'white':'#aaa'};text-align:center">${h.horario_partido?'Partido':'Corrido'}</div>
+            <input type="time" value="${h.hora_inicio_2||'18:00'}" onchange="actualizarHorarioEmp('${h.id}','hora_inicio_2',this.value)" style="padding:6px;border:1px solid #eee;border-radius:6px;font-size:12px;width:90px">
+            <input type="time" value="${h.hora_fin_2||'22:00'}" onchange="actualizarHorarioEmp('${h.id}','hora_fin_2',this.value)" style="padding:6px;border:1px solid #eee;border-radius:6px;font-size:12px;width:90px">`:''}
+            <div onclick="toggleHorarioPartidoEmp('${h.id}',${h.horario_partido})" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;background:${h.horario_partido?'#7F77DD':'#f0f0f5'};color:${h.horario_partido?'white':'#aaa'}">${h.horario_partido?'Partido':'Corrido'}</div>
           </div>
         </div>`;
       }).join('')}
@@ -940,17 +826,12 @@ async function cargarHorariosEmpleados() {
   }
   cont.innerHTML = html || '<p style="color:#aaa;font-size:13px">Sin empleados activos</p>';
 }
-
 async function actualizarHorarioEmp(id, campo, valor) {
   await db.from('empleado_horarios').update({[campo]:valor}).eq('id',id);
 }
-
 async function toggleHorarioPartidoEmp(id, actual) {
   await db.from('empleado_horarios').update({horario_partido:!actual}).eq('id',id);
   cargarHorariosEmpleados();
-}
-  alerta.innerHTML='<div class="alert alert-success">✓ Configuración guardada.</div>';
-  setTimeout(()=>alerta.innerHTML='',2000);
 }
 </script>
 </body>
