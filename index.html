@@ -136,6 +136,20 @@ const HORARIOS = ['08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:30
 let selServicio = null, selFecha = null, selHorario = null, selEmpleado = null;
 let calMes = new Date().getMonth(), calAnio = new Date().getFullYear();
 let turnosOcupados = [], diasBloqueadosCalendario = [];
+let negocioConfig = { dias_abierto: [0,1,2,3,4,5], hora_inicio: '09:00', hora_fin: '18:00', intervalo_minutos: 30 };
+
+async function cargarConfigNegocio() {
+  const { data } = await db.from('negocio_config').select('*');
+  if(!data) return;
+  const cfg = {};
+  data.forEach(r => cfg[r.clave] = r.valor);
+  negocioConfig = {
+    dias_abierto: cfg.dias_abierto ? cfg.dias_abierto.split(',').map(Number) : [0,1,2,3,4,5],
+    hora_inicio: cfg.hora_inicio || '09:00',
+    hora_fin: cfg.hora_fin || '18:00',
+    intervalo_minutos: parseInt(cfg.intervalo_minutos) || 30
+  };
+}
 
 async function cargarServicios() {
   const { data } = await db.from('servicios').select('*').eq('activo', true);
@@ -198,11 +212,33 @@ async function renderCalendario() {
   const { data: bloqueos } = await db.from('dias_bloqueados').select('fecha, empleado_id').like('fecha', mesStr+'%');
   diasBloqueadosCalendario = bloqueos ? bloqueos.map(b=>b.fecha) : [];
 
-  let diasTrabaja = [0,1,2,3,4,5,6];
+  let diasTrabaja = negocioConfig.dias_abierto;
   if(selEmpleado?.id) {
     const { data: horarios } = await db.from('empleado_horarios').select('*').eq('empleado_id', selEmpleado.id).eq('activo', true);
-    if(horarios) diasTrabaja = horarios.map(h=>h.dia_semana);
+    if(horarios && horarios.length) diasTrabaja = horarios.map(h=>h.dia_semana);
   }
+
+  const primerDia = new Date(calAnio, calMes, 1).getDay();
+  const diasEnMes = new Date(calAnio, calMes + 1, 0).getDate();
+  const offset = primerDia === 0 ? 6 : primerDia - 1;
+  let html = ['Lu','Ma','Mi','Ju','Vi','Sá','Do'].map(d => `<div class="cal-day-name">${d}</div>`).join('');
+  for (let i = 0; i < offset; i++) html += '<div class="cal-day empty"></div>';
+  for (let d = 1; d <= diasEnMes; d++) {
+    const fecha = new Date(calAnio, calMes, d);
+    const fechaStr = `${calAnio}-${String(calMes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isHoy = fecha.toDateString() === hoy.toDateString();
+    const isPasado = fecha < hoy;
+    const isSel = selFecha && fecha.toDateString() === selFecha.toDateString();
+    const isBloqueado = diasBloqueadosCalendario.includes(fechaStr);
+    const diaSemana = fecha.getDay() === 0 ? 6 : fecha.getDay() - 1;
+    const noTrabaja = !diasTrabaja.includes(diaSemana);
+    const noDisponible = isPasado || isBloqueado || noTrabaja;
+    html += `<div class="cal-day ${noDisponible?'disabled':''} ${isHoy?'today':''} ${isSel?'selected':''}"
+      onclick="${noDisponible?'':'seleccionarFecha('+calAnio+','+calMes+','+d+')'}"
+      style="${isBloqueado?'background:#FCEBEB;color:#E24B4A;':noTrabaja&&!isPasado?'background:#f5f5f5;color:#ccc;':''}">${d}</div>`;
+  }
+  document.getElementById('cal-grid').innerHTML = html;
+}
 
   const primerDia = new Date(calAnio, calMes, 1).getDay();
   const diasEnMes = new Date(calAnio, calMes + 1, 0).getDate();
@@ -263,16 +299,47 @@ async function seleccionarFecha(a, m, d) {
     turnosOcupados = [];
   }
 
-  renderHorarios();
+  await renderHorarios();
   document.getElementById('paso-horario').style.display = 'block';
   document.getElementById('paso-horario').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-function renderHorarios() {
-  document.getElementById('horarios-grid').innerHTML = HORARIOS.map(h => {
+async function renderHorarios() {
+  let horaInicio = negocioConfig.hora_inicio;
+  let horaFin = negocioConfig.hora_fin;
+  let intervalo = negocioConfig.intervalo_minutos;
+
+  if(selEmpleado?.id && selFecha) {
+    const diaSemana = selFecha.getDay() === 0 ? 6 : selFecha.getDay() - 1;
+    const { data: horario } = await db.from('empleado_horarios')
+      .select('*').eq('empleado_id', selEmpleado.id)
+      .eq('dia_semana', diaSemana).eq('activo', true).single();
+    if(horario) {
+      horaInicio = horario.hora_inicio || horaInicio;
+      horaFin = horario.hora_fin || horaFin;
+    }
+  }
+
+  const horarios = generarHorarios(horaInicio, horaFin, intervalo);
+  document.getElementById('horarios-grid').innerHTML = horarios.map(h => {
     const ocupado = turnosOcupados.includes(h);
     return `<div class="horario-btn ${ocupado?'ocupado':''}" onclick="seleccionarHorario('${h}')" id="hor-${h.replace(':','-')}">${h}</div>`;
   }).join('');
+}
+
+function generarHorarios(inicio, fin, intervalo) {
+  const horarios = [];
+  const [hI, mI] = inicio.split(':').map(Number);
+  const [hF, mF] = fin.split(':').map(Number);
+  let minutos = hI * 60 + mI;
+  const finMinutos = hF * 60 + mF;
+  while(minutos < finMinutos) {
+    const h = Math.floor(minutos/60).toString().padStart(2,'0');
+    const m = (minutos%60).toString().padStart(2,'0');
+    horarios.push(`${h}:${m}`);
+    minutos += intervalo;
+  }
+  return horarios;
 }
 
 function seleccionarHorario(h) {
@@ -330,7 +397,7 @@ function reiniciar() {
   window.scrollTo(0,0);
 }
 
-cargarServicios();
+cargarConfigNegocio().then(() => cargarServicios());
 </script>
 </body>
 </html>
