@@ -68,21 +68,18 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
   </div>
 
   <div id="pantalla-reserva">
-    <!-- PASO 1: SERVICIO -->
     <div class="step">
       <div class="step-label">1 — Elegí el servicio</div>
       <div class="servicios-grid" id="servicios-grid">
         <div style="text-align:center;color:#aaa;font-size:13px;padding:1rem;grid-column:span 2">Cargando servicios...</div>
       </div>
     </div>
-    
-<!-- PASO 2: EMPLEADO -->
+
     <div class="step" id="paso-empleado" style="display:none">
       <div class="step-label">2 — Elegí tu profesional</div>
       <div class="servicios-grid" id="empleados-grid"></div>
     </div>
-    
-    <!-- PASO 2: FECHA -->
+
     <div class="step" id="paso-fecha" style="display:none">
       <div class="step-label">3 — Elegí la fecha</div>
       <div class="calendario">
@@ -95,13 +92,11 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
       </div>
     </div>
 
-    <!-- PASO 3: HORARIO -->
     <div class="step" id="paso-horario" style="display:none">
       <div class="step-label">4 — Elegí el horario</div>
       <div class="horarios-grid" id="horarios-grid"></div>
     </div>
 
-    <!-- PASO 4: DATOS -->
     <div class="step" id="paso-datos" style="display:none">
       <div class="step-label">5 — Tus datos</div>
       <div style="background:white;border-radius:12px;padding:1rem;">
@@ -120,7 +115,6 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
     </div>
   </div>
 
-  <!-- PANTALLA ÉXITO -->
   <div class="success-screen" id="pantalla-exito">
     <div class="success-icon">🎉</div>
     <h2>¡Turno reservado!</h2>
@@ -139,9 +133,9 @@ const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const HORARIOS = ['08:00','08:30','09:00','09:30','10:00','10:30','11:00','11:30','12:00','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00'];
 
-let selServicio = null, selFecha = null, selHorario = null;
+let selServicio = null, selFecha = null, selHorario = null, selEmpleado = null;
 let calMes = new Date().getMonth(), calAnio = new Date().getFullYear();
-let turnosOcupados = [];
+let turnosOcupados = [], diasBloqueadosCalendario = [];
 
 async function cargarServicios() {
   const { data } = await db.from('servicios').select('*').eq('activo', true);
@@ -159,14 +153,13 @@ function seleccionarServicio(id, nombre, precio, duracion) {
   selServicio = { id, nombre, precio, duracion };
   document.querySelectorAll('.servicio-card').forEach(c => c.classList.remove('selected'));
   document.getElementById('srv-' + id).classList.add('selected');
-  cargarEmpleados();
   document.getElementById('paso-empleado').style.display = 'block';
-  document.getElementById('paso-empleado').scrollIntoView({ behavior: 'smooth', block: 'start' });
   document.getElementById('paso-fecha').style.display = 'none';
   document.getElementById('paso-horario').style.display = 'none';
   document.getElementById('paso-datos').style.display = 'none';
+  cargarEmpleados();
+  document.getElementById('paso-empleado').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
-  let selEmpleado = null;
 
 async function cargarEmpleados() {
   const { data } = await db.from('empleados').select('*').eq('activo', true);
@@ -174,7 +167,7 @@ async function cargarEmpleados() {
   if (!data || !data.length) {
     selEmpleado = { id: null, nombre: 'Sin preferencia' };
     document.getElementById('paso-fecha').style.display = 'block';
-    renderCalendario();
+    await renderCalendario();
     return;
   }
   const todos = [{ id: null, nombre: 'Sin preferencia', emoji: '🤷' }, ...data.map(e => ({ ...e, emoji: '💇' }))];
@@ -196,20 +189,16 @@ async function seleccionarEmpleado(id, nombre) {
   document.getElementById('paso-fecha').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-let diasBloqueadosCalendario = [];
-
 async function renderCalendario() {
   const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   document.getElementById('cal-titulo').textContent = meses[calMes] + ' ' + calAnio;
   const hoy = new Date(); hoy.setHours(0,0,0,0);
 
-  // Cargar días bloqueados del mes
   const mesStr = `${calAnio}-${String(calMes+1).padStart(2,'0')}`;
   const { data: bloqueos } = await db.from('dias_bloqueados').select('fecha, empleado_id').like('fecha', mesStr+'%');
   diasBloqueadosCalendario = bloqueos ? bloqueos.map(b=>b.fecha) : [];
 
-  // Cargar días que trabaja el empleado seleccionado
-  let diasTrabaja = [0,1,2,3,4,5,6]; // por defecto todos
+  let diasTrabaja = [0,1,2,3,4,5,6];
   if(selEmpleado?.id) {
     const { data: horarios } = await db.from('empleado_horarios').select('*').eq('empleado_id', selEmpleado.id).eq('activo', true);
     if(horarios) diasTrabaja = horarios.map(h=>h.dia_semana);
@@ -227,17 +216,14 @@ async function renderCalendario() {
     const isPasado = fecha < hoy;
     const isSel = selFecha && fecha.toDateString() === selFecha.toDateString();
     const isBloqueado = diasBloqueadosCalendario.includes(fechaStr);
-    // dia de semana: 0=lunes en nuestro sistema
     const diaSemana = fecha.getDay() === 0 ? 6 : fecha.getDay() - 1;
     const noTrabaja = !diasTrabaja.includes(diaSemana);
     const noDisponible = isPasado || isBloqueado || noTrabaja;
-    html += `<div class="cal-day ${noDisponible?'disabled':''} ${isHoy?'today':''} ${isSel?'selected':''} ${isBloqueado?'bloqueado':''}" 
-      onclick="${noDisponible?'':'seleccionarFecha('+calAnio+','+calMes+','+d+')'}" 
-      title="${isBloqueado?'Día bloqueado':noTrabaja?'No trabaja este día':''}"
+    html += `<div class="cal-day ${noDisponible?'disabled':''} ${isHoy?'today':''} ${isSel?'selected':''}"
+      onclick="${noDisponible?'':'seleccionarFecha('+calAnio+','+calMes+','+d+')'}"
       style="${isBloqueado?'background:#FCEBEB;color:#E24B4A;':noTrabaja&&!isPasado?'background:#f5f5f5;color:#ccc;':''}">${d}</div>`;
   }
   document.getElementById('cal-grid').innerHTML = html;
-}ocument.getElementById('cal-grid').innerHTML = html;
 }
 
 async function cambiarMes(dir) {
@@ -250,15 +236,13 @@ async function cambiarMes(dir) {
 async function seleccionarFecha(a, m, d) {
   selFecha = new Date(a, m, d);
   selHorario = null;
-  renderCalendario();
+  await renderCalendario();
 
   const fechaStr = `${a}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
   const inicio = new Date(a, m, d, 0, 0, 0).toISOString();
   const fin = new Date(a, m, d, 23, 59, 59).toISOString();
-
   const empId = selEmpleado?.id;
 
-  // Verificar si el día está bloqueado
   const { data: bloqueos } = await db.from('dias_bloqueados').select('*')
     .eq('fecha', fechaStr)
     .or(`empleado_id.is.null,empleado_id.eq.${empId||'00000000-0000-0000-0000-000000000000'}`);
@@ -271,9 +255,7 @@ async function seleccionarFecha(a, m, d) {
     return;
   }
 
-  // Obtener turnos ocupados filtrados por empleado si hay preferencia
-  let query = db.from('turnos').select('fecha_hora, empleado_id').gte('fecha_hora', inicio).lte('fecha_hora', fin).neq('estado','cancelado');
-  const { data: turnosDelDia } = await query;
+  const { data: turnosDelDia } = await db.from('turnos').select('fecha_hora, empleado_id').gte('fecha_hora', inicio).lte('fecha_hora', fin).neq('estado','cancelado');
 
   if(empId) {
     turnosOcupados = turnosDelDia ? turnosDelDia.filter(t=>t.empleado_id===empId).map(t=>new Date(t.fecha_hora).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit',timeZone:'America/Argentina/Buenos_Aires'})) : [];
@@ -289,7 +271,7 @@ async function seleccionarFecha(a, m, d) {
 function renderHorarios() {
   document.getElementById('horarios-grid').innerHTML = HORARIOS.map(h => {
     const ocupado = turnosOcupados.includes(h);
-    return `<div class="horario-btn ${ocupado ? 'ocupado' : ''}" onclick="seleccionarHorario('${h}')" id="hor-${h.replace(':','-')}">${h}</div>`;
+    return `<div class="horario-btn ${ocupado?'ocupado':''}" onclick="seleccionarHorario('${h}')" id="hor-${h.replace(':','-')}">${h}</div>`;
   }).join('');
 }
 
@@ -307,7 +289,8 @@ function actualizarResumen() {
   document.getElementById('resumen-box').innerHTML = `
     <div class="resumen-titulo">Resumen de tu turno</div>
     <div class="resumen-item"><span>Servicio</span><span>${selServicio.nombre}</span></div>
-    <div class="resumen-item"><span>Fecha</span><span>${selFecha.toLocaleDateString('es-AR', {weekday:'long', day:'numeric', month:'long'})}</span></div>
+    <div class="resumen-item"><span>Profesional</span><span>${selEmpleado?.nombre||'Sin preferencia'}</span></div>
+    <div class="resumen-item"><span>Fecha</span><span>${selFecha.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}</span></div>
     <div class="resumen-item"><span>Horario</span><span>${selHorario} hs</span></div>
     <div class="resumen-item"><span>Duración</span><span>${selServicio.duracion} min</span></div>
     <div class="resumen-item"><span>Precio</span><span style="color:#7F77DD;font-size:16px">$${Number(selServicio.precio).toLocaleString('es-AR')}</span></div>`;
@@ -320,22 +303,24 @@ async function confirmarTurno() {
   if (!nombre || !tel) { alerta.innerHTML = '<div class="alert alert-error">Completá tu nombre y WhatsApp.</div>'; return; }
   if (!selServicio || !selFecha || !selHorario) { alerta.innerHTML = '<div class="alert alert-error">Elegí servicio, fecha y horario.</div>'; return; }
   const fecha_hora = selFecha.getFullYear() + '-' + String(selFecha.getMonth()+1).padStart(2,'0') + '-' + String(selFecha.getDate()).padStart(2,'0') + 'T' + selHorario + ':00';
-  const { error } = await db.from('turnos').insert([{ cliente_nombre: nombre, cliente_telefono: tel, servicio_id: selServicio.id, empleado_id: selEmpleado?.id || null, fecha_hora, estado: 'confirmado' }]);
+  const { error } = await db.from('turnos').insert([{ cliente_nombre: nombre, cliente_telefono: tel, servicio_id: selServicio.id, empleado_id: selEmpleado?.id||null, fecha_hora, estado: 'confirmado' }]);
   if (error) { alerta.innerHTML = '<div class="alert alert-error">Error al guardar. Intentá de nuevo.</div>'; return; }
   document.getElementById('pantalla-reserva').style.display = 'none';
   document.getElementById('pantalla-exito').style.display = 'block';
   document.getElementById('exito-detalle').innerHTML = `
     <div class="resumen-item"><span>Nombre</span><span>${nombre}</span></div>
     <div class="resumen-item"><span>Servicio</span><span>${selServicio.nombre}</span></div>
-    <div class="resumen-item"><span>Fecha</span><span>${selFecha.toLocaleDateString('es-AR', {weekday:'long', day:'numeric', month:'long'})}</span></div>
+    <div class="resumen-item"><span>Profesional</span><span>${selEmpleado?.nombre||'Sin preferencia'}</span></div>
+    <div class="resumen-item"><span>Fecha</span><span>${selFecha.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}</span></div>
     <div class="resumen-item"><span>Horario</span><span>${selHorario} hs</span></div>
     <div class="resumen-item"><span>Precio</span><span>$${Number(selServicio.precio).toLocaleString('es-AR')}</span></div>`;
 }
 
 function reiniciar() {
-  selServicio = null; selFecha = null; selHorario = null;
+  selServicio = null; selFecha = null; selHorario = null; selEmpleado = null;
   document.getElementById('pantalla-reserva').style.display = 'block';
   document.getElementById('pantalla-exito').style.display = 'none';
+  document.getElementById('paso-empleado').style.display = 'none';
   document.getElementById('paso-fecha').style.display = 'none';
   document.getElementById('paso-horario').style.display = 'none';
   document.getElementById('paso-datos').style.display = 'none';
@@ -344,9 +329,7 @@ function reiniciar() {
   document.querySelectorAll('.servicio-card').forEach(c => c.classList.remove('selected'));
   window.scrollTo(0,0);
 }
-selEmpleado = null;
-  document.getElementById('paso-empleado').style.display = 'none';
-  document.querySelectorAll('.servicio-card').forEach(c => c.classList.remove('selected'));
+
 cargarServicios();
 </script>
 </body>
