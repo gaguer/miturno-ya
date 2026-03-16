@@ -232,6 +232,26 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
       </div>
     </div>
   </div>
+  <div id="sec-config" class="section">
+    <div class="card">
+      <h3>⚙️ Configuración del negocio</h3>
+      <p style="font-size:13px;color:#888;margin-bottom:14px">Estos son los días y horarios generales. Se aplican cuando el cliente elige "Sin preferencia".</p>
+      <div id="alert-config"></div>
+      <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Días que abre el negocio</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px" id="config-dias"></div>
+      <div class="form-group"><label>Horario de apertura</label><input type="time" id="config-inicio" value="09:00" /></div>
+      <div class="form-group"><label>Horario de cierre</label><input type="time" id="config-fin" value="18:00" /></div>
+      <div class="form-group"><label>Intervalo entre turnos (minutos)</label>
+        <select id="config-intervalo">
+          <option value="15">15 minutos</option>
+          <option value="30" selected>30 minutos</option>
+          <option value="45">45 minutos</option>
+          <option value="60">1 hora</option>
+        </select>
+      </div>
+      <button class="btn" onclick="guardarConfig()">Guardar configuración</button>
+    </div>
+  </div>
 <div id="sec-equipo" class="section">
     <div class="card">
       <h3>Equipo activo</h3>
@@ -306,10 +326,10 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
 
  <div class="bottom-nav" id="bottom-nav">
     <div class="nav-row">
-      <div class="nav-item active" id="nav-agenda" onclick="showNav('agenda')"><span class="nav-icon">📅</span>Agenda</div>
+     <div class="nav-item active" id="nav-agenda" onclick="showNav('agenda')"><span class="nav-icon">📅</span>Agenda</div>
       <div class="nav-item" id="nav-clientes" onclick="showNav('clientes')"><span class="nav-icon">👥</span>Clientes</div>
-      <div class="nav-item" id="nav-stats" onclick="showNav('stats')"><span class="nav-icon">📊</span>Stats</div>
       <div class="nav-item" id="nav-equipo" onclick="showNav('equipo')"><span class="nav-icon">👩‍💼</span>Equipo</div>
+      <div class="nav-item" id="nav-config" onclick="showNav('config')"><span class="nav-icon">⚙️</span>Config</div>
       <div class="nav-item" id="nav-ia" onclick="showNav('ia')"><span class="nav-icon">🤖</span>IA</div>
     </div>
   </div>
@@ -369,6 +389,7 @@ function showNav(sec) {
   if(sec==='servicios') cargarServiciosPanel();
   if(sec==='stock') cargarStock();
   if(sec==='equipo') { cargarEquipo(); cargarBloqueados(); }
+  if(sec==='config') cargarConfig();
   if(sec==='ia') {};
 }
 
@@ -796,6 +817,51 @@ async function eliminarBloqueo(id) {
   if(!confirm('¿Eliminar este bloqueo?')) return;
   await db.from('dias_bloqueados').delete().eq('id',id);
   cargarBloqueados();
+}
+  const DIAS_NOMBRES = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+let diasAbierto = [0,1,2,3,4,5];
+
+async function cargarConfig() {
+  const {data} = await db.from('negocio_config').select('*');
+  if(!data) return;
+  const cfg = {};
+  data.forEach(r => cfg[r.clave] = r.valor);
+  diasAbierto = cfg.dias_abierto ? cfg.dias_abierto.split(',').map(Number) : [0,1,2,3,4,5];
+  document.getElementById('config-inicio').value = cfg.hora_inicio || '09:00';
+  document.getElementById('config-fin').value = cfg.hora_fin || '18:00';
+  const sel = document.getElementById('config-intervalo');
+  if(cfg.intervalo_minutos) sel.value = cfg.intervalo_minutos;
+  renderConfigDias();
+}
+
+function renderConfigDias() {
+  document.getElementById('config-dias').innerHTML = DIAS_NOMBRES.map((d,i) => `
+    <div onclick="toggleDiaConfig(${i})" style="padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;background:${diasAbierto.includes(i)?'#7F77DD':'#f0f0f5'};color:${diasAbierto.includes(i)?'white':'#aaa'}">${d.slice(0,2)}</div>
+  `).join('');
+}
+
+function toggleDiaConfig(dia) {
+  if(diasAbierto.includes(dia)) diasAbierto = diasAbierto.filter(d=>d!==dia);
+  else diasAbierto.push(dia);
+  renderConfigDias();
+}
+
+async function guardarConfig() {
+  const inicio = document.getElementById('config-inicio').value;
+  const fin = document.getElementById('config-fin').value;
+  const intervalo = document.getElementById('config-intervalo').value;
+  const alerta = document.getElementById('alert-config');
+  const updates = [
+    {clave:'dias_abierto', valor:diasAbierto.sort().join(',')},
+    {clave:'hora_inicio', valor:inicio},
+    {clave:'hora_fin', valor:fin},
+    {clave:'intervalo_minutos', valor:intervalo}
+  ];
+  for(const u of updates) {
+    await db.from('negocio_config').upsert({clave:u.clave, valor:u.valor},{onConflict:'clave'});
+  }
+  alerta.innerHTML='<div class="alert alert-success">✓ Configuración guardada.</div>';
+  setTimeout(()=>alerta.innerHTML='',2000);
 }
 </script>
 </body>
