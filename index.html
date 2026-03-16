@@ -75,10 +75,16 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
         <div style="text-align:center;color:#aaa;font-size:13px;padding:1rem;grid-column:span 2">Cargando servicios...</div>
       </div>
     </div>
-
+    
+<!-- PASO 2: EMPLEADO -->
+    <div class="step" id="paso-empleado" style="display:none">
+      <div class="step-label">2 — Elegí tu profesional</div>
+      <div class="servicios-grid" id="empleados-grid"></div>
+    </div>
+    
     <!-- PASO 2: FECHA -->
     <div class="step" id="paso-fecha" style="display:none">
-      <div class="step-label">2 — Elegí la fecha</div>
+      <div class="step-label">3 — Elegí la fecha</div>
       <div class="calendario">
         <div class="cal-header">
           <button onclick="cambiarMes(-1)">‹</button>
@@ -91,13 +97,13 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
 
     <!-- PASO 3: HORARIO -->
     <div class="step" id="paso-horario" style="display:none">
-      <div class="step-label">3 — Elegí el horario</div>
+      <div class="step-label">4 — Elegí el horario</div>
       <div class="horarios-grid" id="horarios-grid"></div>
     </div>
 
     <!-- PASO 4: DATOS -->
     <div class="step" id="paso-datos" style="display:none">
-      <div class="step-label">4 — Tus datos</div>
+      <div class="step-label">5 — Tus datos</div>
       <div style="background:white;border-radius:12px;padding:1rem;">
         <div id="alert-form"></div>
         <div class="form-group">
@@ -153,6 +159,33 @@ function seleccionarServicio(id, nombre, precio, duracion) {
   selServicio = { id, nombre, precio, duracion };
   document.querySelectorAll('.servicio-card').forEach(c => c.classList.remove('selected'));
   document.getElementById('srv-' + id).classList.add('selected');
+  cargarEmpleados();
+  document.getElementById('paso-empleado').style.display = 'block';
+  document.getElementById('paso-empleado').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+  let selEmpleado = null;
+
+async function cargarEmpleados() {
+  const { data } = await db.from('empleados').select('*').eq('activo', true);
+  const grid = document.getElementById('empleados-grid');
+  if (!data || !data.length) {
+    selEmpleado = { id: null, nombre: 'Sin preferencia' };
+    document.getElementById('paso-fecha').style.display = 'block';
+    renderCalendario();
+    return;
+  }
+  const todos = [{ id: null, nombre: 'Sin preferencia', emoji: '🤷' }, ...data.map(e => ({ ...e, emoji: '💇' }))];
+  grid.innerHTML = todos.map(e => `
+    <div class="servicio-card" onclick="seleccionarEmpleado('${e.id}','${e.nombre}')" id="emp-${e.id}">
+      <div style="font-size:28px;margin-bottom:6px">${e.emoji || '💇'}</div>
+      <div class="servicio-nombre">${e.nombre}</div>
+    </div>`).join('');
+}
+
+function seleccionarEmpleado(id, nombre) {
+  selEmpleado = { id: id === 'null' ? null : id, nombre };
+  document.querySelectorAll('.servicio-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('emp-' + id)?.classList.add('selected');
   document.getElementById('paso-fecha').style.display = 'block';
   renderCalendario();
   document.getElementById('paso-fecha').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -231,7 +264,7 @@ async function confirmarTurno() {
   if (!nombre || !tel) { alerta.innerHTML = '<div class="alert alert-error">Completá tu nombre y WhatsApp.</div>'; return; }
   if (!selServicio || !selFecha || !selHorario) { alerta.innerHTML = '<div class="alert alert-error">Elegí servicio, fecha y horario.</div>'; return; }
   const fecha_hora = selFecha.getFullYear() + '-' + String(selFecha.getMonth()+1).padStart(2,'0') + '-' + String(selFecha.getDate()).padStart(2,'0') + 'T' + selHorario + ':00';
-  const { error } = await db.from('turnos').insert([{ cliente_nombre: nombre, cliente_telefono: tel, servicio_id: selServicio.id, fecha_hora, estado: 'confirmado' }]);
+  const { error } = await db.from('turnos').insert([{ cliente_nombre: nombre, cliente_telefono: tel, servicio_id: selServicio.id, empleado_id: selEmpleado?.id || null, fecha_hora, estado: 'confirmado' }]);
   if (error) { alerta.innerHTML = '<div class="alert alert-error">Error al guardar. Intentá de nuevo.</div>'; return; }
   document.getElementById('pantalla-reserva').style.display = 'none';
   document.getElementById('pantalla-exito').style.display = 'block';
@@ -255,7 +288,9 @@ function reiniciar() {
   document.querySelectorAll('.servicio-card').forEach(c => c.classList.remove('selected'));
   window.scrollTo(0,0);
 }
-
+selEmpleado = null;
+  document.getElementById('paso-empleado').style.display = 'none';
+  document.querySelectorAll('.servicio-card').forEach(c => c.classList.remove('selected'));
 cargarServicios();
 </script>
 </body>
