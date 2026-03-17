@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MiTurnoYa — Sistema de turnos para tu negocio</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; color: #1a1a1a; background: white; }
+a { text-decoration: none; }
+
+/* NAV */
+nav { display: flex; justify-content: space-between; align-items: center; padding: 1rem 2rem; position: sticky; top: 0; background: white; border-bottom: 1px solid #f0f0f0; z-index: 100; }
+.nav-logo { font-size: 20px; font-weight: 800; color: #7F77DD; }
+.nav-links { display: flex; gap: 1.5rem; align-items: center; }
+.nav-links a { font-size: 14px; color: #666; font-weight: 500; }
+.btn-nav { background: #7F77DD; color: white !important; padding: 10px 20px; border-radius: 8px; font-weight: 700 !important; }
+.btn-nav:hover { background: #534AB7; }
+
+/* HERO */
+.hero { background: linear-gradient(135deg, #7F77DD 0%, #534AB7 100%); padding: 5rem 2rem; text-align: center; }
+.hero-badge { display: inline-block; background: rgba(255,255,255,0.2); color: white; font-size: 13px; font-weight: 700; padding: 6px 16px; border-radius: 20px; margin-bottom: 1.5rem; }
+.hero h1 { font-size: clamp(32px, 6vw, 56px); font-weight: 800; color: white; line-height: 1.15; margin-bottom: 1.5rem; max-width: 700px; margin-left: auto; margin-right: auto; }
+.hero h1 span { color: #FFE066; }
+.hero p { font-size: 18px; color: rgba(255,255,255,0.85); max-width: 520px; margin: 0 auto 2.5rem; line-height: 1.6; }
+.hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn-primary { background: white; color: #7F77DD; padding: 14px 32px; border-radius: 10px; font-size: 16px; font-weight: 800; border: none; cursor: pointer; }
+.btn-primary:hover { background: #f0f0f0; }
+.btn-secondary { background: transparent; color: white; padding: 14px 32px; border-radius: 10px; font-size: 16px; font-weight: 700; border: 2px solid rgba(255,255,255,0.5); cursor: pointer; }
+.btn-secondary:hover { border-color: white; }
+.hero-demo { margin-top: 3rem; background: rgba(255,255,255,0.1); border-radius: 16px; padding: 1rem; max-width: 360px; margin-left: auto; margin-right: auto; }
+.hero-demo img { width: 100%; border-radius: 10px; }
+.hero-stats { display: flex; justify-content: center; gap: 3rem; margin-top: 3rem; flex-wrap: wrap; }
+.hero-stat { text-align: center; }
+.hero-stat .num { font-size: 32px; font-weight: 800; color: white; }
+.hero-stat .lbl { font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 2px; }
+
+/* SECTION */
+section { padding: 5rem 2rem; }
+.section-label { font-size: 12px; font-weight: 700; color: #7F77DD; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; text-align: center; }
+.section-title { font-size: clamp(24px, 4vw, 40px); font-weight: 800; text-align: center; margin-bottom: 16px; line-height: 1.2; }
+.section-sub { font-size: 17px; color: #666; text-align: center; max-width: 540px; margin: 0 auto 3rem; line-height: 1.6; }
+
+/* FEATURES */
+.features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; max-width: 1000px; margin: 0 auto; }
+.feature-card { background: #f8f8fc; border-radius: 16px; padding: 1.5rem; }
+.feature-icon { font-size: 36px; margin-bottom: 12px; }
+.feature-title { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+.feature-desc { font-size: 14px; color: #666; line-height: 1.6; }
+
+/* COMO FUNCIONA */
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; max-width: 900px; margin: 0 auto; }
+.step { text-align: center; }
+.step-num { width: 48px; height: 48px; background: #7F77DD; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; margin: 0 auto 1rem; }
+.step-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+.step-desc { font-size: 14px; color: #666; line-height: 1.5; }
+.step-arrow { display: none; }
+
+/* PRICING */
+.pricing-card { background: white; border: 2px solid #7F77DD; border-radius: 20px; padding: 2.5rem; max-width: 420px; margin: 0 auto; text-align: center; box-shadow: 0 8px 32px rgba(127,119,221,0.15); }
+.pricing-badge { background: #7F77DD; color: white; font-size: 12px; font-weight: 700; padding: 4px 16px; border-radius: 20px; display: inline-block; margin-bottom: 1.5rem; }
+.pricing-nombre { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+.pricing-precio { font-size: 48px; font-weight: 800; color: #7F77DD; line-height: 1; }
+.pricing-periodo { font-size: 14px; color: #aaa; margin-bottom: 8px; }
+.pricing-promo { font-size: 13px; color: #639922; font-weight: 700; margin-bottom: 2rem; background: #EAF3DE; padding: 6px 16px; border-radius: 8px; display: inline-block; }
+.pricing-features { text-align: left; margin-bottom: 2rem; }
+.pricing-feature { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 14px; }
+.pricing-feature:last-child { border-bottom: none; }
+.check { color: #639922; font-size: 16px; font-weight: 700; }
+.btn-pricing { width: 100%; padding: 15px; background: #7F77DD; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer; }
+.btn-pricing:hover { background: #534AB7; }
+.pricing-nota { font-size: 12px; color: #aaa; margin-top: 12px; }
+
+/* TESTIMONIOS */
+.testimonios { background: #f8f8fc; }
+.testimonios-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; max-width: 900px; margin: 0 auto; }
+.testimonio { background: white; border-radius: 16px; padding: 1.5rem; }
+.testimonio-texto { font-size: 15px; color: #333; line-height: 1.6; margin-bottom: 1rem; font-style: italic; }
+.testimonio-autor { display: flex; align-items: center; gap: 10px; }
+.testimonio-avatar { width: 40px; height: 40px; border-radius: 50%; background: #EEEDFE; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; color: #7F77DD; }
+.testimonio-nombre { font-size: 14px; font-weight: 700; }
+.testimonio-negocio { font-size: 12px; color: #aaa; }
+.estrellas { color: #FFB800; font-size: 14px; margin-bottom: 10px; }
+
+/* FAQ */
+.faq-list { max-width: 640px; margin: 0 auto; }
+.faq-item { border-bottom: 1px solid #eee; padding: 1.25rem 0; cursor: pointer; }
+.faq-pregunta { display: flex; justify-content: space-between; align-items: center; font-size: 16px; font-weight: 700; }
+.faq-respuesta { font-size: 14px; color: #666; line-height: 1.6; margin-top: 10px; display: none; }
+.faq-respuesta.open { display: block; }
+
+/* CTA FINAL */
+.cta { background: linear-gradient(135deg, #7F77DD, #534AB7); padding: 5rem 2rem; text-align: center; }
+.cta h2 { font-size: clamp(24px, 4vw, 40px); font-weight: 800; color: white; margin-bottom: 1rem; }
+.cta p { font-size: 17px; color: rgba(255,255,255,0.85); margin-bottom: 2rem; }
+
+/* FOOTER */
+footer { background: #1a1a1a; color: #aaa; padding: 2rem; text-align: center; font-size: 13px; }
+footer a { color: #7F77DD; }
+
+/* RESPONSIVE */
+@media (max-width: 600px) {
+  nav { padding: 1rem; }
+  .nav-links { gap: 1rem; }
+  .nav-links a:not(.btn-nav) { display: none; }
+  section { padding: 3rem 1rem; }
+  .hero { padding: 3rem 1rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">📅 MiTurnoYa</div>
+  <div class="nav-links">
+    <a href="#funciones">Funciones</a>
+    <a href="#precios">Precios</a>
+    <a href="#faq">FAQ</a>
+    <a href="/registro.html" class="btn-nav">Empezar gratis</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge">🎉 14 días gratis — sin tarjeta de crédito</div>
+  <h1>El sistema de turnos que tu negocio <span>necesitaba</span></h1>
+  <p>Tus clientes reservan online, vos gestionás todo desde el celular. Sin papeles, sin llamadas, sin quilombos.</p>
+  <div class="hero-btns">
+    <a href="/registro.html"><button class="btn-primary">Probarlo gratis 14 días</button></a>
+    <a href="/demo/index.html" target="_blank"><button class="btn-secondary">Ver demo en vivo →</button></a>
+  </div>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="num">100%</div><div class="lbl">Online y desde el celular</div></div>
+    <div class="hero-stat"><div class="num">0$</div><div class="lbl">Para empezar</div></div>
+    <div class="hero-stat"><div class="num">5 min</div><div class="lbl">Para configurarlo</div></div>
+  </div>
+</div>
+
+<!-- FUNCIONES -->
+<section id="funciones">
+  <div class="section-label">Funciones</div>
+  <h2 class="section-title">Todo lo que necesitás en un solo lugar</h2>
+  <p class="section-sub">Sin complicaciones. Sin papeles. Sin llamadas perdidas.</p>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">📅</div>
+      <div class="feature-title">Reservas online 24/7</div>
+      <div class="feature-desc">Tus clientes reservan su turno cuando quieran, desde el celular. Sin llamarte, sin horarios de atención.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">👥</div>
+      <div class="feature-title">Agenda por profesional</div>
+      <div class="feature-desc">Si tenés más de un empleado, cada uno tiene su propia agenda. Los clientes eligen con quién atenderse.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">💬</div>
+      <div class="feature-title">Contacto directo por WhatsApp</div>
+      <div class="feature-desc">Un botón lleva al cliente directo a tu WhatsApp con el mensaje pre-cargado. Simple y efectivo.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📦</div>
+      <div class="feature-title">Control de stock</div>
+      <div class="feature-desc">Registrá tus productos con código de barras. Te avisa cuando el stock está bajo. Ideal para salones y spas.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📊</div>
+      <div class="feature-title">Estadísticas del negocio</div>
+      <div class="feature-desc">Cuántos turnos tuviste, cuánto facturaste, qué servicios son los más pedidos. Todo en tiempo real.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🤖</div>
+      <div class="feature-title">Campañas con IA</div>
+      <div class="feature-desc">La inteligencia artificial te genera mensajes de marketing para enviar por WhatsApp. Promociones, novedades y más.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🚫</div>
+      <div class="feature-title">Días bloqueados</div>
+      <div class="feature-desc">Feriados, vacaciones, días libres. Bloqueá fechas con un click y los clientes no podrán reservar ese día.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⏰</div>
+      <div class="feature-title">Horarios flexibles</div>
+      <div class="feature-desc">Horario corrido o partido, por día y por empleado. Tu negocio tiene sus propias reglas y la app las respeta.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📱</div>
+      <div class="feature-title">100% desde el celular</div>
+      <div class="feature-desc">Funciona perfecto en iPhone y Android sin instalar nada. Abrís el link y listo.</div>
+    </div>
+  </div>
+</section>
+
+<!-- COMO FUNCIONA -->
+<section style="background:#f8f8fc;" id="como-funciona">
+  <div class="section-label">¿Cómo funciona?</div>
+  <h2 class="section-title">Listo en 5 minutos</h2>
+  <p class="section-sub">Sin conocimientos técnicos. Sin instalar nada. Solo seguís los pasos.</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-title">Creás tu cuenta</div>
+      <div class="step-desc">Te registrás con tu email y el nombre de tu negocio. En segundos tenés tu panel listo.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-title">Cargás tus servicios</div>
+      <div class="step-desc">Agregás los servicios que ofrecés, los precios y la duración de cada uno.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-title">Compartís el link</div>
+      <div class="step-desc">Le mandás el link a tus clientes por WhatsApp, Instagram o lo ponés en tu bio.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-title">¡Listo! Recibís turnos</div>
+      <div class="step-desc">Los clientes reservan solos y vos ves todo desde tu panel de administración.</div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="precios">
+  <div class="section-label">Precios</div>
+  <h2 class="section-title">Un precio justo para empezar</h2>
+  <p class="section-sub">Sin sorpresas. Sin costos ocultos. Cancelás cuando querés.</p>
+  <div class="pricing-card">
+    <div class="pricing-badge">🔥 Precio de lanzamiento</div>
+    <div class="pricing-nombre">Plan Completo</div>
+    <div class="pricing-precio">$5.000</div>
+    <div class="pricing-periodo">ARS / mes</div>
+    <div class="pricing-promo">✓ Precio especial primer año — después $8.000/mes</div>
+    <div class="pricing-features">
+      <div class="pricing-feature"><span class="check">✓</span> Turnos online ilimitados</div>
+      <div class="pricing-feature"><span class="check">✓</span> Hasta 3 empleados / profesionales</div>
+      <div class="pricing-feature"><span class="check">✓</span> Control de stock con QR</div>
+      <div class="pricing-feature"><span class="check">✓</span> Estadísticas del negocio</div>
+      <div class="pricing-feature"><span class="check">✓</span> Campañas con IA</div>
+      <div class="pricing-feature"><span class="check">✓</span> Horarios flexibles y días bloqueados</div>
+      <div class="pricing-feature"><span class="check">✓</span> Funciona en celular y computadora</div>
+      <div class="pricing-feature"><span class="check">✓</span> Soporte por WhatsApp</div>
+    </div>
+    <a href="/registro.html"><button class="btn-pricing">Empezar 14 días gratis</button></a>
+    <div class="pricing-nota">Sin tarjeta de crédito. Cancelás cuando querés.</div>
+  </div>
+</section>
+
+<!-- TESTIMONIOS -->
+<section class="testimonios">
+  <div class="section-label">Testimonios</div>
+  <h2 class="section-title">Lo que dicen nuestros clientes</h2>
+  <p class="section-sub">Negocios como el tuyo ya están usando MiTurnoYa.</p>
+  <div class="testimonios-grid">
+    <div class="testimonio">
+      <div class="estrellas">★★★★★</div>
+      <div class="testimonio-texto">"Antes perdía clientes por no poder atender el teléfono. Ahora reservan solos y yo me entero al toque. Un cambio total."</div>
+      <div class="testimonio-autor">
+        <div class="testimonio-avatar">VR</div>
+        <div><div class="testimonio-nombre">Valentina R.</div><div class="testimonio-negocio">Salón de belleza, Córdoba</div></div>
+      </div>
+    </div>
+    <div class="testimonio">
+      <div class="estrellas">★★★★★</div>
+      <div class="testimonio-texto">"Mis clientes aman poder reservar desde el celular. Y yo tengo todo organizado sin usar una libreta. Súper recomendado."</div>
+      <div class="testimonio-autor">
+        <div class="testimonio-avatar">ML</div>
+        <div><div class="testimonio-nombre">Marcos L.</div><div class="testimonio-negocio">Barbería, Buenos Aires</div></div>
+      </div>
+    </div>
+    <div class="testimonio">
+      <div class="estrellas">★★★★★</div>
+      <div class="testimonio-texto">"Lo del stock con QR me salvó la vida. Sé exactamente qué productos tengo y cuándo pedir. Muy completo para el precio."</div>
+      <div class="testimonio-autor">
+        <div class="testimonio-avatar">SP</div>
+        <div><div class="testimonio-nombre">Sofía P.</div><div class="testimonio-negocio">Centro de estética, Rosario</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq">
+  <div class="section-label">Preguntas frecuentes</div>
+  <h2 class="section-title">¿Tenés dudas?</h2>
+  <p class="section-sub">Las preguntas más comunes respondidas.</p>
+  <div class="faq-list">
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-pregunta">¿Necesito saber programar para usarlo? <span>+</span></div>
+      <div class="faq-respuesta">No, para nada. Solo te registrás, cargás tus servicios y listo. Todo está diseñado para que cualquier persona lo pueda usar desde el celular.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-pregunta">¿Mis clientes tienen que instalar algo? <span>+</span></div>
+      <div class="faq-respuesta">No. Tus clientes entran a un link desde cualquier celular o computadora y reservan su turno. Sin apps, sin registros, sin complicaciones.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-pregunta">¿Qué pasa después de los 14 días de prueba? <span>+</span></div>
+      <div class="faq-respuesta">Podés contratar el plan por $5.000 ARS/mes (precio especial primer año). Si no querés continuar, simplemente no hacés nada y la cuenta se desactiva.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-pregunta">¿Puedo tener más de un empleado? <span>+</span></div>
+      <div class="faq-respuesta">Sí. El plan incluye hasta 3 empleados o profesionales, cada uno con su propia agenda y horarios. Los clientes pueden elegir con quién atenderse.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-pregunta">¿Cómo pago? <span>+</span></div>
+      <div class="faq-respuesta">Por ahora el pago se coordina directamente por WhatsApp. Aceptamos transferencia bancaria y MercadoPago.</div>
+    </div>
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-pregunta">¿Funciona en el celular? <span>+</span></div>
+      <div class="faq-respuesta">Sí, está diseñado especialmente para celular. Funciona perfecto en iPhone y Android, sin instalar ninguna app.</div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<div class="cta">
+  <h2>¿Listo para modernizar tu negocio?</h2>
+  <p>Empezá gratis hoy. Sin tarjeta de crédito. Sin compromisos.</p>
+  <div class="hero-btns">
+    <a href="/registro.html"><button class="btn-primary">Crear mi cuenta gratis</button></a>
+    <a href="/demo/index.html" target="_blank"><button class="btn-secondary">Ver demo primero →</button></a>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <p>© 2026 MiTurnoYa — Todos los derechos reservados</p>
+  <p style="margin-top:8px">Hecho con ❤️ en Argentina · <a href="/registro.html">Empezar gratis</a></p>
+</footer>
+
+<script>
+function toggleFaq(item) {
+  const resp = item.querySelector('.faq-respuesta');
+  const signo = item.querySelector('.faq-pregunta span');
+  const isOpen = resp.classList.contains('open');
+  document.querySelectorAll('.faq-respuesta').forEach(r=>r.classList.remove('open'));
+  document.querySelectorAll('.faq-pregunta span').forEach(s=>s.textContent='+');
+  if(!isOpen) { resp.classList.add('open'); signo.textContent = '−'; }
+}
+</script>
+</body>
+</html>
