@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reservá tu turno</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; min-height: 100vh; }
+.app { max-width: 480px; margin: 0 auto; padding: 0 0 2rem; }
+.header { background: linear-gradient(135deg, #7F77DD, #534AB7); padding: 2rem 1.5rem 1.5rem; text-align: center; }
+.header h1 { font-size: 26px; font-weight: 800; color: white; letter-spacing: -0.5px; }
+.header p { font-size: 14px; color: rgba(255,255,255,0.8); margin-top: 4px; }
+.step { padding: 1.5rem 1rem 0; }
+.step-label { font-size: 11px; font-weight: 700; color: #7F77DD; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.servicios-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.servicio-card { background: white; border-radius: 12px; padding: 14px; cursor: pointer; border: 2px solid transparent; transition: all 0.15s; }
+.servicio-card:hover { border-color: #7F77DD; }
+.servicio-card.selected { border-color: #7F77DD; background: #EEEDFE; }
+.servicio-nombre { font-size: 14px; font-weight: 700; color: #1a1a1a; }
+.servicio-duracion { font-size: 11px; color: #aaa; margin-top: 2px; }
+.servicio-precio { font-size: 18px; font-weight: 800; color: #7F77DD; margin-top: 6px; }
+.calendario { background: white; border-radius: 12px; padding: 1rem; }
+.cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.cal-header button { background: #f0f0f5; border: none; width: 32px; height: 32px; border-radius: 8px; font-size: 16px; cursor: pointer; }
+.cal-header span { font-size: 15px; font-weight: 700; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-day-name { text-align: center; font-size: 10px; font-weight: 700; color: #aaa; padding: 4px 0; text-transform: uppercase; }
+.cal-day { text-align: center; padding: 8px 4px; border-radius: 8px; cursor: pointer; font-size: 14px; color: #333; }
+.cal-day:hover { background: #EEEDFE; }
+.cal-day.selected { background: #7F77DD; color: white; font-weight: 700; }
+.cal-day.today { font-weight: 700; color: #7F77DD; }
+.cal-day.disabled { color: #ddd; cursor: default; pointer-events: none; }
+.cal-day.empty { pointer-events: none; }
+.horarios-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 1rem; }
+.horario-btn { background: white; border: 1.5px solid #eee; border-radius: 8px; padding: 10px 4px; text-align: center; font-size: 13px; font-weight: 600; cursor: pointer; color: #333; transition: all 0.15s; }
+.horario-btn:hover { border-color: #7F77DD; color: #7F77DD; }
+.horario-btn.selected { background: #7F77DD; color: white; border-color: #7F77DD; }
+.horario-btn.ocupado { background: #f5f5f5; color: #ccc; border-color: #eee; cursor: not-allowed; pointer-events: none; text-decoration: line-through; }
+.form-group { margin-bottom: 14px; }
+.form-group label { font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 5px; }
+.form-group input { width: 100%; padding: 12px 14px; border: 1.5px solid #eee; border-radius: 10px; font-size: 15px; background: white; color: #1a1a1a; transition: border-color 0.2s; }
+.form-group input:focus { border-color: #7F77DD; outline: none; }
+.btn-confirmar { width: 100%; padding: 15px; background: #7F77DD; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer; margin-top: 8px; }
+.btn-confirmar:hover { background: #534AB7; }
+.resumen { background: white; border-radius: 12px; padding: 1rem; margin-top: 1rem; border-left: 4px solid #7F77DD; }
+.resumen-titulo { font-size: 12px; font-weight: 700; color: #7F77DD; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.resumen-item { display: flex; justify-content: space-between; font-size: 14px; padding: 3px 0; }
+.resumen-item span:first-child { color: #888; }
+.resumen-item span:last-child { font-weight: 600; }
+.alert { padding: 14px; border-radius: 10px; font-size: 14px; text-align: center; margin-bottom: 12px; }
+.alert-error { background: #FCEBEB; color: #501313; border: 1px solid #F09595; }
+.success-screen { text-align: center; padding: 3rem 1.5rem; display: none; }
+.success-icon { font-size: 64px; margin-bottom: 1rem; }
+.success-screen h2 { font-size: 22px; font-weight: 800; color: #27500A; margin-bottom: 8px; }
+.success-screen p { font-size: 14px; color: #666; line-height: 1.6; }
+.success-card { background: white; border-radius: 12px; padding: 1rem; margin: 1rem 0; text-align: left; }
+.btn-whatsapp { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px; background: #25D366; color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; text-decoration: none; margin-top: 10px; }
+.whatsapp-flotante { position: fixed; bottom: 24px; right: 24px; background: #25D366; color: white; border-radius: 50%; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; font-size: 26px; text-decoration: none; box-shadow: 0 4px 12px rgba(37,211,102,0.4); z-index: 999; }
+.btn-cancelar { width: 100%; padding: 10px; background: transparent; border: 1.5px solid #E24B4A; color: #E24B4A; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+.turno-cliente-card { background: white; border-radius: 12px; padding: 1rem; margin-bottom: 10px; border-left: 4px solid #7F77DD; }
+.turno-cliente-card.cancelado { border-left-color: #E24B4A; opacity: 0.7; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <h1 id="negocio-titulo">📅 Cargando...</h1>
+        <p>Reservá tu turno en segundos</p>
+      </div>
+      <button onclick="abrirMisTurnos()" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;margin-top:4px">📋 Mis turnos</button>
+    </div>
+  </div>
+
+  <div id="pantalla-reserva">
+    <div class="step">
+      <div class="step-label">1 — Elegí el servicio</div>
+      <div class="servicios-grid" id="servicios-grid">
+        <div style="text-align:center;color:#aaa;font-size:13px;padding:1rem;grid-column:span 2">Cargando...</div>
+      </div>
+    </div>
+    <div class="step" id="paso-empleado" style="display:none">
+      <div class="step-label">2 — Elegí tu profesional</div>
+      <div class="servicios-grid" id="empleados-grid"></div>
+    </div>
+    <div class="step" id="paso-fecha" style="display:none">
+      <div class="step-label">3 — Elegí la fecha</div>
+      <div class="calendario">
+        <div class="cal-header">
+          <button onclick="cambiarMes(-1)">‹</button>
+          <span id="cal-titulo"></span>
+          <button onclick="cambiarMes(1)">›</button>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+      </div>
+    </div>
+    <div class="step" id="paso-horario" style="display:none">
+      <div class="step-label">4 — Elegí el horario</div>
+      <div class="horarios-grid" id="horarios-grid"></div>
+    </div>
+    <div class="step" id="paso-datos" style="display:none">
+      <div class="step-label">5 — Tus datos</div>
+      <div style="background:white;border-radius:12px;padding:1rem;">
+        <div id="alert-form"></div>
+        <div class="form-group"><label>Tu nombre completo</label><input type="text" id="c-nombre" placeholder="Ej: María García" /></div>
+        <div class="form-group"><label>Tu WhatsApp</label><input type="tel" id="c-tel" placeholder="Ej: 3512345678" /></div>
+        <div class="resumen" id="resumen-box"></div>
+        <button class="btn-confirmar" onclick="confirmarTurno()">Confirmar turno</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="success-screen" id="pantalla-exito">
+    <div class="success-icon">🎉</div>
+    <h2>¡Turno reservado!</h2>
+    <p>Tu turno fue confirmado con éxito.</p>
+    <div class="success-card" id="exito-detalle"></div>
+    <p style="font-size:13px;color:#aaa;margin-top:1rem">Te esperamos. Ante cualquier cambio comunicate con el negocio.</p>
+    <a id="btn-wa-exito" href="#" target="_blank" class="btn-whatsapp">💬 Contactar al negocio por WhatsApp</a>
+    <button class="btn-confirmar" style="margin-top:10px" onclick="reiniciar()">Reservar otro turno</button>
+  </div>
+</div>
+
+<a id="btn-wa-flotante" href="#" target="_blank" class="whatsapp-flotante">💬</a>
+
+<div id="modal-mis-turnos" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:998;overflow-y:auto">
+  <div style="background:#f0f0f5;min-height:100vh;max-width:480px;margin:0 auto;padding:1rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <h2 style="font-size:18px;font-weight:800">Mis turnos</h2>
+      <button onclick="cerrarMisTurnos()" style="background:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;font-weight:700">✕ Cerrar</button>
+    </div>
+    <div style="background:white;border-radius:12px;padding:1rem;margin-bottom:12px">
+      <div style="font-size:13px;color:#888;margin-bottom:10px">Ingresá tu WhatsApp para ver tus turnos</div>
+      <div style="display:flex;gap:8px">
+        <input type="tel" id="buscar-tel" placeholder="Ej: 3512345678" style="flex:1;padding:10px 12px;border:1.5px solid #eee;border-radius:8px;font-size:14px" />
+        <button onclick="buscarMisTurnos()" style="background:#7F77DD;color:white;border:none;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer">Buscar</button>
+      </div>
+    </div>
+    <div id="mis-turnos-lista"></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://qivbrddsmamxsszacjhv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Axj3TD_KZyVj6Aa1_8JJlg_BILyCNFS';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const SLUG = window.location.pathname.split('/')[1] || 'demo';
+let NEGOCIO_ID = null;
+let selServicio = null, selFecha = null, selHorario = null, selEmpleado = null;
+let calMes = new Date().getMonth(), calAnio = new Date().getFullYear();
+let turnosOcupados = [], diasBloqueadosCalendario = [];
+let negocioConfig = { dias_abierto:[0,1,2,3,4,5], hora_inicio:'09:00', hora_fin:'18:00', hora_inicio_2:'18:00', hora_fin_2:'22:00', horario_partido:false, intervalo_minutos:30, whatsapp_numero:'', whatsapp_mensaje:'Hola! Me gustaría consultar sobre los turnos.' };
+
+async function iniciar() {
+  const { data: negocio } = await db.from('negocios').select('*').eq('slug', SLUG).single();
+  if(!negocio) { document.getElementById('negocio-titulo').textContent = '❌ Negocio no encontrado'; return; }
+  NEGOCIO_ID = negocio.id;
+  document.getElementById('negocio-titulo').textContent = '📅 ' + negocio.nombre;
+  document.title = negocio.nombre + ' — Reservá tu turno';
+  await cargarConfigNegocio();
+  await cargarServicios();
+}
+
+async function cargarConfigNegocio() {
+  const { data } = await db.from('negocio_config').select('*').eq('negocio_id', NEGOCIO_ID);
+  if(!data) return;
+  const cfg = {};
+  data.forEach(r => cfg[r.clave] = r.valor);
+  negocioConfig = {
+    dias_abierto: cfg.dias_abierto ? cfg.dias_abierto.split(',').map(Number) : [0,1,2,3,4,5],
+    hora_inicio: cfg.hora_inicio || '09:00',
+    hora_fin: cfg.hora_fin || '18:00',
+    hora_inicio_2: cfg.hora_inicio_2 || '18:00',
+    hora_fin_2: cfg.hora_fin_2 || '22:00',
+    horario_partido: cfg.horario_partido === 'true',
+    intervalo_minutos: parseInt(cfg.intervalo_minutos) || 30,
+    whatsapp_numero: cfg.whatsapp_numero || '',
+    whatsapp_mensaje: cfg.whatsapp_mensaje || 'Hola! Me gustaría consultar sobre los turnos.'
+  };
+  actualizarBotonesWA();
+}
+
+function actualizarBotonesWA() {
+  const num = negocioConfig.whatsapp_numero;
+  const msg = encodeURIComponent(negocioConfig.whatsapp_mensaje);
+  const url = num ? `https://wa.me/${num}?text=${msg}` : '#';
+  const flotante = document.getElementById('btn-wa-flotante');
+  const exito = document.getElementById('btn-wa-exito');
+  if(flotante) flotante.href = url;
+  if(exito) exito.href = url;
+  if(flotante) flotante.style.display = num ? 'flex' : 'none';
+}
+
+async function cargarServicios() {
+  const { data } = await db.from('servicios').select('*').eq('activo', true).eq('negocio_id', NEGOCIO_ID);
+  const grid = document.getElementById('servicios-grid');
+  if (!data || !data.length) { grid.innerHTML = '<div style="text-align:center;color:#aaa;grid-column:span 2;padding:1rem;font-size:13px">No hay servicios disponibles</div>'; return; }
+  grid.innerHTML = data.map(s => `
+    <div class="servicio-card" onclick="seleccionarServicio('${s.id}','${s.nombre}',${s.precio},${s.duracion_minutos})" id="srv-${s.id}">
+      <div class="servicio-nombre">${s.nombre}</div>
+      <div class="servicio-duracion">${s.duracion_minutos} min</div>
+      <div class="servicio-precio">$${Number(s.precio).toLocaleString('es-AR')}</div>
+    </div>`).join('');
+}
+
+function seleccionarServicio(id, nombre, precio, duracion) {
+  selServicio = { id, nombre, precio, duracion };
+  document.querySelectorAll('.servicio-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('srv-' + id).classList.add('selected');
+  document.getElementById('paso-empleado').style.display = 'block';
+  document.getElementById('paso-fecha').style.display = 'none';
+  document.getElementById('paso-horario').style.display = 'none';
+  document.getElementById('paso-datos').style.display = 'none';
+  cargarEmpleados();
+  document.getElementById('paso-empleado').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function cargarEmpleados() {
+  const { data } = await db.from('empleados').select('*').eq('activo', true).eq('negocio_id', NEGOCIO_ID);
+  const grid = document.getElementById('empleados-grid');
+  if (!data || !data.length) {
+    selEmpleado = { id: null, nombre: 'Sin preferencia' };
+    document.getElementById('paso-fecha').style.display = 'block';
+    await renderCalendario();
+    return;
+  }
+  const todos = [{ id: null, nombre: 'Sin preferencia', emoji: '🤷' }, ...data.map(e => ({ ...e, emoji: '💇' }))];
+  grid.innerHTML = todos.map(e => `
+    <div class="servicio-card" onclick="seleccionarEmpleado('${e.id}','${e.nombre}')" id="emp-${e.id}">
+      <div style="font-size:28px;margin-bottom:6px">${e.emoji||'💇'}</div>
+      <div class="servicio-nombre">${e.nombre}</div>
+    </div>`).join('');
+}
+
+async function seleccionarEmpleado(id, nombre) {
+  selEmpleado = { id: id==='null'?null:id, nombre };
+  document.querySelectorAll('.servicio-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('emp-'+id)?.classList.add('selected');
+  document.getElementById('paso-fecha').style.display = 'block';
+  document.getElementById('paso-horario').style.display = 'none';
+  document.getElementById('paso-datos').style.display = 'none';
+  await renderCalendario();
+  document.getElementById('paso-fecha').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function renderCalendario() {
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('cal-titulo').textContent = meses[calMes] + ' ' + calAnio;
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const mesStr = `${calAnio}-${String(calMes+1).padStart(2,'0')}`;
+  const { data: bloqueos } = await db.from('dias_bloqueados').select('fecha, empleado_id').eq('negocio_id', NEGOCIO_ID).like('fecha', mesStr+'%');
+  diasBloqueadosCalendario = bloqueos ? bloqueos.map(b=>b.fecha) : [];
+  let diasTrabaja = negocioConfig.dias_abierto;
+  if(selEmpleado?.id) {
+    const { data: horarios } = await db.from('empleado_horarios').select('*').eq('empleado_id', selEmpleado.id).eq('activo', true);
+    if(horarios && horarios.length) diasTrabaja = horarios.map(h=>h.dia_semana);
+  }
+  const primerDia = new Date(calAnio, calMes, 1).getDay();
+  const diasEnMes = new Date(calAnio, calMes+1, 0).getDate();
+  const offset = primerDia===0?6:primerDia-1;
+  let html = ['Lu','Ma','Mi','Ju','Vi','Sá','Do'].map(d=>`<div class="cal-day-name">${d}</div>`).join('');
+  for(let i=0;i<offset;i++) html+='<div class="cal-day empty"></div>';
+  for(let d=1;d<=diasEnMes;d++) {
+    const fecha = new Date(calAnio,calMes,d);
+    const fechaStr = `${calAnio}-${String(calMes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isHoy = fecha.toDateString()===hoy.toDateString();
+    const isPasado = fecha<hoy;
+    const isSel = selFecha&&fecha.toDateString()===selFecha.toDateString();
+    const isBloqueado = diasBloqueadosCalendario.includes(fechaStr);
+    const diaSemana = fecha.getDay()===0?6:fecha.getDay()-1;
+    const noTrabaja = !diasTrabaja.includes(diaSemana);
+    const noDisponible = isPasado||isBloqueado||noTrabaja;
+    html+=`<div class="cal-day ${noDisponible?'disabled':''} ${isHoy?'today':''} ${isSel?'selected':''}"
+      onclick="${noDisponible?'':'seleccionarFecha('+calAnio+','+calMes+','+d+')'}"
+      style="${isBloqueado?'background:#FCEBEB;color:#E24B4A;':noTrabaja&&!isPasado?'background:#f5f5f5;color:#ccc;':''}">${d}</div>`;
+  }
+  document.getElementById('cal-grid').innerHTML = html;
+}
+
+async function cambiarMes(dir) {
+  calMes+=dir;
+  if(calMes>11){calMes=0;calAnio++;}
+  if(calMes<0){calMes=11;calAnio--;}
+  await renderCalendario();
+}
+
+async function seleccionarFecha(a,m,d) {
+  selFecha=new Date(a,m,d); selHorario=null;
+  await renderCalendario();
+  const fechaStr=`${a}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  const inicio=new Date(a,m,d,0,0,0).toISOString();
+  const fin=new Date(a,m,d,23,59,59).toISOString();
+  const empId=selEmpleado?.id;
+  const {data:bloqueos}=await db.from('dias_bloqueados').select('*').eq('negocio_id',NEGOCIO_ID).eq('fecha',fechaStr);
+  if(bloqueos&&bloqueos.length>0){
+    document.getElementById('paso-horario').style.display='block';
+    document.getElementById('horarios-grid').innerHTML=`<div style="grid-column:span 4;text-align:center;padding:1rem;background:#FCEBEB;border-radius:10px;color:#A32D2D;font-size:14px;font-weight:700">🚫 ${bloqueos[0].motivo||'Día no disponible'}</div>`;
+    document.getElementById('paso-horario').scrollIntoView({behavior:'smooth',block:'start'});
+    return;
+  }
+  const {data:turnosDelDia}=await db.from('turnos').select('fecha_hora,empleado_id').eq('negocio_id',NEGOCIO_ID).gte('fecha_hora',inicio).lte('fecha_hora',fin).neq('estado','cancelado').neq('estado','cancelado_cliente');
+  if(empId) turnosOcupados=turnosDelDia?turnosDelDia.filter(t=>t.empleado_id===empId).map(t=>new Date(t.fecha_hora).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit',timeZone:'America/Argentina/Buenos_Aires'})):[];
+  else turnosOcupados=[];
+  await renderHorarios();
+  document.getElementById('paso-horario').style.display='block';
+  document.getElementById('paso-horario').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+async function renderHorarios() {
+  let horaInicio=negocioConfig.hora_inicio, horaFin=negocioConfig.hora_fin;
+  let horaInicio2=negocioConfig.hora_inicio_2, horaFin2=negocioConfig.hora_fin_2;
+  let partido=negocioConfig.horario_partido, intervalo=negocioConfig.intervalo_minutos;
+  if(selEmpleado?.id&&selFecha){
+    const diaSemana=selFecha.getDay()===0?6:selFecha.getDay()-1;
+    const {data:horario}=await db.from('empleado_horarios').select('*').eq('empleado_id',selEmpleado.id).eq('dia_semana',diaSemana).eq('activo',true).single();
+    if(horario){horaInicio=horario.hora_inicio||horaInicio;horaFin=horario.hora_fin||horaFin;horaInicio2=horario.hora_inicio_2||horaInicio2;horaFin2=horario.hora_fin_2||horaFin2;partido=horario.horario_partido||false;}
+  }
+  const horarios=generarHorarios(horaInicio,horaFin,intervalo,partido,horaInicio2,horaFin2);
+  if(!horarios.length){document.getElementById('horarios-grid').innerHTML='<div style="grid-column:span 4;text-align:center;padding:1rem;color:#aaa;font-size:13px">Sin horarios disponibles</div>';return;}
+  document.getElementById('horarios-grid').innerHTML=horarios.map(h=>{
+    const ocupado=turnosOcupados.includes(h);
+    return `<div class="horario-btn ${ocupado?'ocupado':''}" onclick="seleccionarHorario('${h}')" id="hor-${h.replace(':','-')}">${h}</div>`;
+  }).join('');
+}
+
+function generarHorarios(inicio,fin,intervalo,partido=false,inicio2=null,fin2=null){
+  const horarios=[];
+  const toMin=t=>{const [h,m]=t.split(':').map(Number);return h*60+m;};
+  const toStr=m=>`${Math.floor(m/60).toString().padStart(2,'0')}:${(m%60).toString().padStart(2,'0')}`;
+  let m=toMin(inicio);const fM=toMin(fin);
+  while(m<fM){horarios.push(toStr(m));m+=intervalo;}
+  if(partido&&inicio2&&fin2){let m2=toMin(inicio2);const fM2=toMin(fin2);while(m2<fM2){horarios.push(toStr(m2));m2+=intervalo;}}
+  return horarios;
+}
+
+function seleccionarHorario(h){
+  selHorario=h;
+  document.querySelectorAll('.horario-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('hor-'+h.replace(':','-')).classList.add('selected');
+  actualizarResumen();
+  document.getElementById('paso-datos').style.display='block';
+  document.getElementById('paso-datos').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function actualizarResumen(){
+  if(!selServicio||!selFecha||!selHorario)return;
+  document.getElementById('resumen-box').innerHTML=`
+    <div class="resumen-titulo">Resumen de tu turno</div>
+    <div class="resumen-item"><span>Servicio</span><span>${selServicio.nombre}</span></div>
+    <div class="resumen-item"><span>Profesional</span><span>${selEmpleado?.nombre||'Sin preferencia'}</span></div>
+    <div class="resumen-item"><span>Fecha</span><span>${selFecha.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}</span></div>
+    <div class="resumen-item"><span>Horario</span><span>${selHorario} hs</span></div>
+    <div class="resumen-item"><span>Duración</span><span>${selServicio.duracion} min</span></div>
+    <div class="resumen-item"><span>Precio</span><span style="color:#7F77DD;font-size:16px">$${Number(selServicio.precio).toLocaleString('es-AR')}</span></div>`;
+}
+
+async function confirmarTurno(){
+  const nombre=document.getElementById('c-nombre').value.trim();
+  const tel=document.getElementById('c-tel').value.trim();
+  const alerta=document.getElementById('alert-form');
+  if(!nombre||!tel){alerta.innerHTML='<div class="alert alert-error">Completá tu nombre y WhatsApp.</div>';return;}
+  if(!selServicio||!selFecha||!selHorario){alerta.innerHTML='<div class="alert alert-error">Elegí servicio, fecha y horario.</div>';return;}
+  const fecha_hora=selFecha.getFullYear()+'-'+String(selFecha.getMonth()+1).padStart(2,'0')+'-'+String(selFecha.getDate()).padStart(2,'0')+'T'+selHorario+':00';
+  const {error}=await db.from('turnos').insert([{cliente_nombre:nombre,cliente_telefono:tel,servicio_id:selServicio.id,empleado_id:selEmpleado?.id||null,fecha_hora,estado:'confirmado',negocio_id:NEGOCIO_ID}]);
+  if(error){alerta.innerHTML='<div class="alert alert-error">Error al guardar. Intentá de nuevo.</div>';return;}
+  document.getElementById('pantalla-reserva').style.display='none';
+  document.getElementById('pantalla-exito').style.display='block';
+  const msgExito=encodeURIComponent(`Hola! Acabo de reservar un turno de ${selServicio.nombre} para el ${selFecha.toLocaleDateString('es-AR')} a las ${selHorario}hs. ¡Muchas gracias!`);
+  if(negocioConfig.whatsapp_numero) document.getElementById('btn-wa-exito').href=`https://wa.me/${negocioConfig.whatsapp_numero}?text=${msgExito}`;
+  document.getElementById('exito-detalle').innerHTML=`
+    <div class="resumen-item"><span>Nombre</span><span>${nombre}</span></div>
+    <div class="resumen-item"><span>Servicio</span><span>${selServicio.nombre}</span></div>
+    <div class="resumen-item"><span>Profesional</span><span>${selEmpleado?.nombre||'Sin preferencia'}</span></div>
+    <div class="resumen-item"><span>Fecha</span><span>${selFecha.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}</span></div>
+    <div class="resumen-item"><span>Horario</span><span>${selHorario} hs</span></div>
+    <div class="resumen-item"><span>Precio</span><span>$${Number(selServicio.precio).toLocaleString('es-AR')}</span></div>`;
+}
+
+function reiniciar(){
+  selServicio=null;selFecha=null;selHorario=null;selEmpleado=null;
+  document.getElementById('pantalla-reserva').style.display='block';
+  document.getElementById('pantalla-exito').style.display='none';
+  document.getElementById('paso-empleado').style.display='none';
+  document.getElementById('paso-fecha').style.display='none';
+  document.getElementById('paso-horario').style.display='none';
+  document.getElementById('paso-datos').style.display='none';
+  document.getElementById('c-nombre').value='';
+  document.getElementById('c-tel').value='';
+  document.querySelectorAll('.servicio-card').forEach(c=>c.classList.remove('selected'));
+  window.scrollTo(0,0);
+}
+
+function abrirMisTurnos(){document.getElementById('modal-mis-turnos').style.display='block';document.getElementById('mis-turnos-lista').innerHTML='';document.getElementById('buscar-tel').value='';}
+function cerrarMisTurnos(){document.getElementById('modal-mis-turnos').style.display='none';}
+
+async function buscarMisTurnos(){
+  const tel=document.getElementById('buscar-tel').value.trim();
+  if(!tel){alert('Ingresá tu número de WhatsApp.');return;}
+  const cont=document.getElementById('mis-turnos-lista');
+  cont.innerHTML='<div style="text-align:center;color:#aaa;padding:1rem;font-size:14px">Buscando...</div>';
+  const hoy=new Date().toISOString();
+  const {data}=await db.from('turnos').select('*,servicios(nombre,precio),empleados(nombre)').eq('cliente_telefono',tel).eq('negocio_id',NEGOCIO_ID).gte('fecha_hora',hoy).order('fecha_hora');
+  if(!data||!data.length){cont.innerHTML='<div style="text-align:center;color:#aaa;padding:2rem;font-size:14px">No encontramos turnos próximos con ese número.</div>';return;}
+  cont.innerHTML=data.map(t=>{
+    const dt=new Date(t.fecha_hora);
+    const fecha=dt.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+    const hora=dt.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit',timeZone:'America/Argentina/Buenos_Aires'});
+    const cancelado=t.estado==='cancelado'||t.estado==='cancelado_cliente';
+    return `<div class="turno-cliente-card ${cancelado?'cancelado':''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div><div style="font-size:15px;font-weight:700">${t.servicios?.nombre||'Servicio'}</div><div style="font-size:13px;color:#888;margin-top:2px">${t.empleados?.nombre?'Con '+t.empleados.nombre:''}</div></div>
+        <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;background:${cancelado?'#FCEBEB':'#EAF3DE'};color:${cancelado?'#A32D2D':'#27500A'}">${cancelado?'Cancelado':'Confirmado'}</span>
+      </div>
+      <div style="font-size:13px;color:#555;margin-bottom:4px">📅 ${fecha}</div>
+      <div style="font-size:13px;color:#555;margin-bottom:4px">🕐 ${hora} hs</div>
+      <div style="font-size:14px;font-weight:700;color:#7F77DD">$${Number(t.servicios?.precio||0).toLocaleString('es-AR')}</div>
+      ${!cancelado?`<button class="btn-cancelar" onclick="cancelarTurnoCliente('${t.id}')">Cancelar este turno</button>`:'<div style="font-size:12px;color:#aaa;margin-top:8px;text-align:center">Este turno fue cancelado</div>'}
+    </div>`;
+  }).join('');
+}
+
+async function cancelarTurnoCliente(id){
+  if(!confirm('¿Seguro que querés cancelar este turno?'))return;
+  const {error}=await db.from('turnos').update({estado:'cancelado_cliente',cancelado_por:'cliente'}).eq('id',id);
+  if(error){alert('Error al cancelar. Intentá de nuevo.');return;}
+  await buscarMisTurnos();
+}
+
+iniciar();
+</script>
+</body>
+</html>
