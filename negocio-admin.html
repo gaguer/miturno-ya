@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MiTurnoYa — Panel Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; }
+.app { max-width: 520px; margin: 0 auto; padding: 0 0 80px; }
+.login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+.login-card { background: white; border-radius: 16px; padding: 2rem; width: 100%; max-width: 380px; text-align: center; }
+.login-card h2 { font-size: 20px; font-weight: 800; color: #7F77DD; margin-bottom: 8px; }
+.login-card p { font-size: 14px; color: #888; margin-bottom: 1.5rem; }
+.form-group { margin-bottom: 14px; text-align: left; }
+.form-group label { font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 5px; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 14px; border: 1.5px solid #eee; border-radius: 10px; font-size: 15px; background: #fafafa; color: #1a1a1a; transition: border-color 0.2s; }
+.form-group input:focus, .form-group select:focus { border-color: #7F77DD; outline: none; background: white; }
+.btn { width: 100%; padding: 13px; background: #7F77DD; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; }
+.btn:hover { background: #534AB7; }
+.btn:active { transform: scale(0.98); }
+.btn-sm { width: auto; padding: 6px 14px; font-size: 12px; border-radius: 8px; }
+.btn-outline { background: transparent; border: 1.5px solid #7F77DD; color: #7F77DD; }
+.btn-danger { background: #E24B4A; }
+.btn-danger:hover { background: #A32D2D; }
+.btn-green { background: #639922; }
+.btn-green:hover { background: #3B6D11; }
+.alert { padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 14px; text-align: center; }
+.alert-error { background: #FCEBEB; color: #501313; }
+.alert-success { background: #EAF3DE; color: #27500A; }
+.header { background: #7F77DD; padding: 1rem 1.25rem 0; display: none; }
+.header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.header h1 { font-size: 16px; font-weight: 800; color: white; }
+.header-negocio { font-size: 12px; color: rgba(255,255,255,0.8); }
+.logout-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; }
+.week-strip { background: #6B63CC; display: flex; padding: 8px 1rem; gap: 4px; }
+.date-nav { display: flex; align-items: center; gap: 8px; padding-bottom: 12px; }
+.date-nav button { background: rgba(255,255,255,0.2); border: none; color: white; width: 30px; height: 30px; border-radius: 50%; font-size: 16px; cursor: pointer; }
+.date-nav .date-label { flex: 1; text-align: center; color: white; font-size: 14px; font-weight: 600; }
+.day-pill { flex: 1; text-align: center; padding: 6px 4px; border-radius: 8px; cursor: pointer; }
+.day-pill .wd { font-size: 10px; color: rgba(255,255,255,0.7); text-transform: uppercase; }
+.day-pill .dd { font-size: 15px; font-weight: 700; color: white; }
+.day-pill.active { background: white; }
+.day-pill.active .wd, .day-pill.active .dd { color: #7F77DD; }
+.bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 520px; background: white; border-top: 1px solid #eee; display: none; z-index: 100; }
+.nav-row { display: flex; }
+.nav-item { flex: 1; padding: 8px 0; text-align: center; cursor: pointer; color: #aaa; font-size: 10px; }
+.nav-item.active { color: #7F77DD; }
+.nav-icon { font-size: 18px; display: block; }
+.section { display: none; padding: 1rem; }
+.section.active { display: block; }
+.card { background: white; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 12px; }
+.card h3 { font-size: 15px; font-weight: 700; margin-bottom: 14px; }
+.turno-card { background: white; border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; display: flex; gap: 12px; align-items: stretch; }
+.turno-hora { display: flex; flex-direction: column; align-items: center; min-width: 44px; }
+.turno-hora .h { font-size: 16px; font-weight: 800; }
+.turno-hora .m { font-size: 11px; color: #aaa; }
+.turno-divider { width: 3px; border-radius: 3px; }
+.turno-info { flex: 1; }
+.turno-nombre { font-size: 15px; font-weight: 700; }
+.turno-servicio { font-size: 12px; color: #888; margin-top: 2px; }
+.turno-precio { font-size: 13px; font-weight: 700; color: #7F77DD; margin-top: 3px; }
+.turno-tel { font-size: 12px; color: #aaa; margin-top: 2px; }
+.turno-acciones { display: flex; gap: 6px; margin-top: 8px; }
+.badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
+.badge-confirmado { background: #EAF3DE; color: #27500A; }
+.badge-pendiente { background: #FAEEDA; color: #633806; }
+.badge-cancelado { background: #FCEBEB; color: #501313; }
+.badge-cancelado_cliente { background: #FAEEDA; color: #633806; }
+.color-confirmado { background: #639922; }
+.color-pendiente { background: #BA7517; }
+.color-cancelado { background: #E24B4A; }
+.color-cancelado_cliente { background: #BA7517; }
+.empty-state { text-align: center; padding: 3rem 1rem; color: #aaa; }
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+.metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.metric { background: white; border-radius: 12px; padding: 1rem; }
+.metric .label { font-size: 11px; color: #aaa; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.metric .value { font-size: 28px; font-weight: 800; color: #333; margin-top: 4px; }
+.metric .sub { font-size: 11px; color: #7F77DD; margin-top: 2px; font-weight: 600; }
+.cliente-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f5f5f5; }
+.cliente-avatar { width: 40px; height: 40px; border-radius: 50%; background: #EEEDFE; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; color: #7F77DD; flex-shrink: 0; }
+.cliente-info { flex: 1; }
+.cliente-nombre { font-size: 14px; font-weight: 700; }
+.cliente-datos { font-size: 12px; color: #aaa; }
+.cliente-badge { font-size: 11px; font-weight: 700; color: #7F77DD; background: #EEEDFE; padding: 2px 8px; border-radius: 10px; }
+.servicio-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f5f5f5; }
+.servicio-row:last-child { border-bottom: none; }
+.precio-pill { background: #EEEDFE; color: #3C3489; font-size: 14px; font-weight: 800; padding: 6px 12px; border-radius: 10px; }
+.producto-card { background: white; border-radius: 12px; padding: 14px; margin-bottom: 10px; border-left: 4px solid #639922; }
+.producto-card.stock-bajo { border-left-color: #E24B4A; }
+.producto-card.stock-medio { border-left-color: #BA7517; }
+.producto-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.producto-nombre { font-size: 15px; font-weight: 700; }
+.producto-cat { font-size: 11px; color: #aaa; margin-top: 2px; }
+.stock-badge { font-size: 13px; font-weight: 800; padding: 6px 12px; border-radius: 10px; }
+.stock-ok { background: #EAF3DE; color: #27500A; }
+.stock-bajo-badge { background: #FCEBEB; color: #A32D2D; }
+.stock-medio-badge { background: #FAEEDA; color: #633806; }
+.producto-detalles { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+.detalle-item { font-size: 12px; color: #888; }
+.detalle-item span { font-weight: 700; color: #333; display: block; font-size: 13px; }
+.producto-acciones { display: flex; gap: 8px; }
+.stock-filtros { display: flex; gap: 8px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; }
+.filtro-btn { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; border: 1.5px solid #eee; background: white; cursor: pointer; white-space: nowrap; color: #666; }
+.filtro-btn.active { background: #7F77DD; color: white; border-color: #7F77DD; }
+.historial-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; }
+.historial-item:last-child { border-bottom: none; }
+.mov-entrada { color: #27500A; font-weight: 700; }
+.mov-salida { color: #A32D2D; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<div class="login-screen" id="login-screen" style="display:none">
+  <div class="login-card">
+    <h2>📅 MiTurnoYa</h2>
+    <p>Tu sesión expiró. Iniciá sesión nuevamente.</p>
+    <div class="form-group"><label>Email</label><input type="email" id="login-email" placeholder="tu@email.com" /></div>
+    <div class="form-group"><label>Contraseña</label><input type="password" id="login-pass" placeholder="••••••••" /></div>
+    <div id="alert-login"></div>
+    <button class="btn" onclick="loginDirecto()">Ingresar</button>
+    <div style="margin-top:12px;font-size:13px;color:#aaa">¿No tenés cuenta? <a href="/registro.html" style="color:#7F77DD;font-weight:700">Registrate gratis</a></div>
+  </div>
+</div>
+
+<div class="app" id="admin-app" style="display:none">
+  <div class="header" id="admin-header">
+    <div class="header-top">
+      <div>
+        <h1 id="header-negocio-nombre">Panel Admin</h1>
+        <div class="header-negocio" id="header-fecha">Cargando...</div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">Salir</button>
+    </div>
+    <div class="date-nav">
+      <button onclick="cambiarSemana(-1)">‹</button>
+      <div class="date-label" id="semana-label">Esta semana</div>
+      <button onclick="cambiarSemana(1)">›</button>
+    </div>
+    <div class="week-strip" id="week-strip"></div>
+  </div>
+
+  <div id="sec-agenda" class="section active">
+    <div id="lista-turnos"><div class="empty-state"><div class="empty-icon">📭</div><p>Cargando...</p></div></div>
+  </div>
+
+  <div id="sec-clientes" class="section">
+    <div class="card"><h3>Clientes</h3><div id="lista-clientes"></div></div>
+  </div>
+
+  <div id="sec-stats" class="section">
+    <div class="metric-grid">
+      <div class="metric"><div class="label">Hoy</div><div class="value" id="m-hoy">-</div><div class="sub">turnos</div></div>
+      <div class="metric"><div class="label">Esta semana</div><div class="value" id="m-semana">-</div><div class="sub">turnos</div></div>
+      <div class="metric"><div class="label">Este mes</div><div class="value" id="m-mes">-</div><div class="sub">turnos</div></div>
+      <div class="metric"><div class="label">Ingresos hoy</div><div class="value" id="m-ingresos">-</div><div class="sub">estimado</div></div>
+    </div>
+    <div class="card"><h3>Servicios más pedidos</h3><div id="top-servicios"></div></div>
+  </div>
+
+  <div id="sec-servicios" class="section">
+    <div class="card"><h3>Servicios activos</h3><div id="lista-servicios"></div></div>
+    <div class="card">
+      <h3>Agregar servicio</h3>
+      <div id="alert-servicio"></div>
+      <div class="form-group"><label>Nombre</label><input type="text" id="srv-nombre" placeholder="Ej: Depilación" /></div>
+      <div class="form-group"><label>Descripción</label><input type="text" id="srv-desc" placeholder="Opcional" /></div>
+      <div class="form-group"><label>Duración (minutos)</label><input type="number" id="srv-dur" placeholder="Ej: 45" /></div>
+      <div class="form-group"><label>Precio</label><input type="number" id="srv-precio" placeholder="Ej: 3500" /></div>
+      <button class="btn" onclick="agregarServicio()">Agregar servicio</button>
+    </div>
+  </div>
+
+  <div id="sec-equipo" class="section">
+    <div class="card"><h3>Equipo activo</h3><div id="lista-equipo"></div></div>
+    <div class="card">
+      <h3>Agregar empleado</h3>
+      <div id="alert-equipo"></div>
+      <div class="form-group"><label>Nombre</label><input type="text" id="eq-nombre" placeholder="Ej: Valentina" /></div>
+      <div class="form-group"><label>Teléfono</label><input type="tel" id="eq-tel" placeholder="Ej: 3512345678" /></div>
+      <div class="form-group"><label>Email</label><input type="email" id="eq-email" placeholder="Ej: vale@salon.com" /></div>
+      <button class="btn" onclick="agregarEmpleado()">Agregar empleado</button>
+    </div>
+    <div class="card">
+      <h3>🚫 Días bloqueados</h3>
+      <div id="lista-bloqueados" style="margin-bottom:14px"></div>
+      <div id="alert-bloqueo"></div>
+      <div class="form-group"><label>Fecha</label><input type="date" id="bl-fecha" /></div>
+      <div class="form-group"><label>Motivo</label><input type="text" id="bl-motivo" placeholder="Ej: Feriado nacional" /></div>
+      <div class="form-group"><label>¿Para quién?</label><select id="bl-empleado"><option value="">Todo el negocio</option></select></div>
+      <button class="btn" onclick="agregarBloqueo()">Bloquear día</button>
+    </div>
+  </div>
+
+  <div id="sec-config" class="section">
+    <div class="card">
+      <h3>⚙️ Configuración del negocio</h3>
+      <div id="alert-config"></div>
+      <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Días que abre el negocio</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px" id="config-dias"></div>
+      <div style="background:#f8f8f8;border-radius:10px;padding:12px;margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div style="font-size:13px;font-weight:700">Tipo de horario</div>
+          <div style="display:flex;gap:8px">
+            <div onclick="setTipoHorario(false)" id="btn-corrido" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;background:#7F77DD;color:white">Corrido</div>
+            <div onclick="setTipoHorario(true)" id="btn-partido" style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;background:#f0f0f5;color:#aaa">Partido</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="form-group" style="margin:0"><label>Apertura 1</label><input type="time" id="config-inicio" value="09:00" /></div>
+          <div class="form-group" style="margin:0"><label>Cierre 1</label><input type="time" id="config-fin" value="18:00" /></div>
+        </div>
+        <div id="horario-partido-fields" style="display:none;margin-top:10px">
+          <div style="font-size:11px;font-weight:700;color:#7F77DD;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Segundo turno</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="form-group" style="margin:0"><label>Apertura 2</label><input type="time" id="config-inicio2" value="18:00" /></div>
+            <div class="form-group" style="margin:0"><label>Cierre 2</label><input type="time" id="config-fin2" value="22:00" /></div>
+          </div>
+        </div>
+      </div>
+      <div class="form-group"><label>Intervalo entre turnos (minutos)</label>
+        <select id="config-intervalo">
+          <option value="15">15 minutos</option>
+          <option value="30" selected>30 minutos</option>
+          <option value="45">45 minutos</option>
+          <option value="60">1 hora</option>
+        </select>
+      </div>
+      <div class="form-group"><label>WhatsApp del negocio</label><input type="tel" id="config-whatsapp" placeholder="Ej: 5493472557025" /></div>
+      <div class="form-group"><label>Mensaje predeterminado</label><input type="text" id="config-wamensaje" placeholder="Hola! Quiero consultar sobre turnos" /></div>
+      <button class="btn" onclick="guardarConfig()">Guardar configuración</button>
+    </div>
+    <div class="card">
+      <h3>⏰ Horarios por empleado</h3>
+      <div id="horarios-empleados"></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:14px;font-weight:700">Tu URL pública</div>
+          <div style="font-size:13px;color:#7F77DD;margin-top:4px" id="url-publica"></div>
+        </div>
+        <button class="btn btn-sm" onclick="copiarURL()">Copiar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="sec-ia" class="section">
+    <div class="card">
+      <h3>🤖 Generador de campañas con IA</h3>
+      <p style="font-size:13px;color:#888;margin-bottom:14px">La IA genera el mensaje perfecto para WhatsApp.</p>
+      <div class="form-group"><label>Tipo de campaña</label>
+        <select id="ia-tipo">
+          <option value="promocion">Promoción / descuento</option>
+          <option value="novedad">Novedad / nuevo servicio</option>
+          <option value="recordatorio">Recordatorio de turno</option>
+          <option value="fecha">Fecha especial</option>
+          <option value="reactivar">Reactivar clientes</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Detalle de la campaña</label><textarea id="ia-detalle" rows="3" placeholder="Ej: 30% de descuento en coloración todo marzo"></textarea></div>
+      <div class="form-group"><label>Tono</label>
+        <select id="ia-tono">
+          <option value="amigable">Amigable y cercano</option>
+          <option value="profesional">Profesional</option>
+          <option value="urgente">Con urgencia</option>
+          <option value="divertido">Divertido y fresco</option>
+        </select>
+      </div>
+      <button class="btn" onclick="generarCampana()" id="btn-generar">✨ Generar mensaje con IA</button>
+    </div>
+    <div id="resultado-ia" style="display:none">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h3 style="margin-bottom:0">Mensaje generado</h3>
+          <button class="btn btn-sm btn-green" onclick="copiarMensaje()">📋 Copiar</button>
+        </div>
+        <div id="mensaje-generado" style="background:#f8f8f8;border-radius:10px;padding:14px;font-size:14px;line-height:1.7;white-space:pre-wrap;color:#1a1a1a"></div>
+        <div id="copy-ok" style="display:none;text-align:center;color:#27500A;font-size:13px;margin-top:8px;font-weight:700">✓ ¡Copiado!</div>
+      </div>
+      <div class="card">
+        <h3>Generá otra versión</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button class="btn btn-outline" onclick="generarVariante('mas corto')">Más corto</button>
+          <button class="btn btn-outline" onclick="generarVariante('mas largo')">Más largo</button>
+          <button class="btn btn-outline" onclick="generarVariante('mas formal')">Más formal</button>
+          <button class="btn btn-outline" onclick="generarVariante('mas divertido con emojis')">Con emojis</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-nav" id="bottom-nav">
+    <div class="nav-row">
+      <div class="nav-item active" id="nav-agenda" onclick="showNav('agenda')"><span class="nav-icon">📅</span>Agenda</div>
+      <div class="nav-item" id="nav-clientes" onclick="showNav('clientes')"><span class="nav-icon">👥</span>Clientes</div>
+      <div class="nav-item" id="nav-equipo" onclick="showNav('equipo')"><span class="nav-icon">👩‍💼</span>Equipo</div>
+      <div class="nav-item" id="nav-config" onclick="showNav('config')"><span class="nav-icon">⚙️</span>Config</div>
+      <div class="nav-item" id="nav-ia" onclick="showNav('ia')"><span class="nav-icon">🤖</span>IA</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://qivbrddsmamxsszacjhv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Axj3TD_KZyVj6Aa1_8JJlg_BILyCNFS';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const DIAS_NOMBRES = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+let NEGOCIO_ID = null, NEGOCIO_SLUG = null, NEGOCIO_NOMBRE = null;
+let fechaActiva = new Date(), semanaOffset = 0, todosProductos = [];
+let diasAbierto = [0,1,2,3,4,5], esHorarioPartido = false, ultimoPrompt = '';
+
+// VERIFICAR SESIÓN
+function verificarSesion() {
+  NEGOCIO_ID = localStorage.getItem('mty_negocio_id');
+  NEGOCIO_SLUG = localStorage.getItem('mty_negocio_slug');
+  NEGOCIO_NOMBRE = localStorage.getItem('mty_negocio_nombre');
+  if(!NEGOCIO_ID) {
+    document.getElementById('login-screen').style.display = 'flex';
+    return false;
+  }
+  mostrarAdmin();
+  return true;
+}
+
+async function loginDirecto() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const alerta = document.getElementById('alert-login');
+  if(!email||!pass){alerta.innerHTML='<div class="alert alert-error">Completá email y contraseña.</div>';return;}
+  const {data:negocio} = await db.from('negocios').select('*').eq('email',email).single();
+  if(!negocio){alerta.innerHTML='<div class="alert alert-error">Email no encontrado.</div>';return;}
+  localStorage.setItem('mty_negocio_id', negocio.id);
+  localStorage.setItem('mty_negocio_slug', negocio.slug);
+  localStorage.setItem('mty_negocio_nombre', negocio.nombre);
+  NEGOCIO_ID = negocio.id; NEGOCIO_SLUG = negocio.slug; NEGOCIO_NOMBRE = negocio.nombre;
+  document.getElementById('login-screen').style.display = 'none';
+  mostrarAdmin();
+}
+
+function doLogout() {
+  localStorage.removeItem('mty_negocio_id');
+  localStorage.removeItem('mty_negocio_slug');
+  localStorage.removeItem('mty_negocio_nombre');
+  localStorage.removeItem('mty_negocio_email');
+  window.location.href = '/registro.html';
+}
+
+function mostrarAdmin() {
+  document.getElementById('admin-app').style.display = 'block';
+  document.getElementById('admin-header').style.display = 'block';
+  document.getElementById('bottom-nav').style.display = 'block';
+  document.getElementById('header-negocio-nombre').textContent = NEGOCIO_NOMBRE || 'Panel Admin';
+  const urlPublica = `miturno-ya.vercel.app/${NEGOCIO_SLUG}/index.html`;
+  const urlEl = document.getElementById('url-publica');
+  if(urlEl) urlEl.textContent = urlPublica;
+  renderWeekStrip();
+  cargarTurnos();
+  cargarConfig();
+}
+
+function copiarURL() {
+  const url = `https://miturno-ya.vercel.app/${NEGOCIO_SLUG}/index.html`;
+  navigator.clipboard.writeText(url).then(()=>alert('URL copiada: ' + url));
+}
+
+function getLunes(offset) {
+  const hoy = new Date(), dia = hoy.getDay()||7, lunes = new Date(hoy);
+  lunes.setDate(hoy.getDate()-dia+1+offset*7); lunes.setHours(0,0,0,0); return lunes;
+}
+function renderWeekStrip() {
+  const lunes = getLunes(semanaOffset), dias = ['Lu','Ma','Mi','Ju','Vi','Sá','Do'];
+  let html = '';
+  for(let i=0;i<7;i++){
+    const d = new Date(lunes); d.setDate(lunes.getDate()+i);
+    const isActive = d.toDateString()===fechaActiva.toDateString();
+    html+=`<div class="day-pill ${isActive?'active':''}" onclick="seleccionarDia(${d.getTime()})"><div class="wd">${dias[i]}</div><div class="dd">${d.getDate()}</div></div>`;
+  }
+  document.getElementById('week-strip').innerHTML = html;
+  document.getElementById('semana-label').textContent = semanaOffset===0?'Esta semana':getLunes(semanaOffset).toLocaleDateString('es-AR',{month:'long',year:'numeric'});
+  document.getElementById('header-fecha').textContent = fechaActiva.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+}
+function seleccionarDia(ts){fechaActiva=new Date(ts);renderWeekStrip();cargarTurnos();}
+function cambiarSemana(dir){semanaOffset+=dir;fechaActiva=getLunes(semanaOffset);renderWeekStrip();cargarTurnos();}
+
+function showNav(sec) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('sec-'+sec).classList.add('active');
+  document.getElementById('nav-'+sec).classList.add('active');
+  if(sec==='clientes') cargarClientes();
+  if(sec==='stats') cargarStats();
+  if(sec==='servicios') cargarServiciosPanel();
+  if(sec==='equipo'){cargarEquipo();cargarBloqueados();}
+  if(sec==='config') cargarConfig();
+}
+
+async function cargarTurnos() {
+  if(!NEGOCIO_ID) return;
+  const inicio=new Date(fechaActiva);inicio.setHours(0,0,0,0);
+  const fin=new Date(fechaActiva);fin.setHours(23,59,59,999);
+  const [{data:turnos},{data:empleados}]=await Promise.all([
+    db.from('turnos').select('*,servicios(nombre,precio,duracion_minutos),empleados(nombre)').eq('negocio_id',NEGOCIO_ID).gte('fecha_hora',inicio.toISOString()).lte('fecha_hora',fin.toISOString()).order('fecha_hora'),
+    db.from('empleados').select('*').eq('activo',true).eq('negocio_id',NEGOCIO_ID)
+  ]);
+  const cont=document.getElementById('lista-turnos');
+  if(!turnos||!turnos.length){cont.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><p>Sin turnos para este día</p></div>';return;}
+  if(!empleados||empleados.length<=1){cont.innerHTML=renderTurnosList(turnos);return;}
+  const sinAsignar=turnos.filter(t=>!t.empleado_id);
+  let html='<div style="display:grid;grid-template-columns:'+empleados.map(()=>'1fr').join(' ')+';gap:10px;margin-bottom:10px">';
+  empleados.forEach(emp=>{
+    const te=turnos.filter(t=>t.empleado_id===emp.id);
+    html+=`<div style="background:#EEEDFE;border-radius:10px;padding:8px;text-align:center;font-size:13px;font-weight:700;color:#3C3489">${emp.nombre}<br><span style="font-size:11px;font-weight:400;color:#7F77DD">${te.length} turnos</span></div>`;
+  });
+  html+='</div><div style="display:grid;grid-template-columns:'+empleados.map(()=>'1fr').join(' ')+';gap:10px">';
+  empleados.forEach(emp=>{
+    const te=turnos.filter(t=>t.empleado_id===emp.id);
+    html+='<div>'+(te.length?renderTurnosList(te,true):'<div style="text-align:center;color:#ccc;padding:1rem;font-size:12px">Sin turnos</div>')+'</div>';
+  });
+  html+='</div>';
+  if(sinAsignar.length) html+='<div style="margin-top:12px"><div style="font-size:12px;font-weight:700;color:#888;margin-bottom:8px">Sin profesional asignado</div>'+renderTurnosList(sinAsignar)+'</div>';
+  cont.innerHTML=html;
+}
+
+function renderTurnosList(turnos,compacto=false){
+  return turnos.map(t=>{
+    const dt=new Date(t.fecha_hora);
+    const horaInicio=dt.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit',timeZone:'America/Argentina/Buenos_Aires'});
+    const dtFin=new Date(dt.getTime()+(t.servicios?.duracion_minutos||30)*60000);
+    const horaFin=dtFin.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit',timeZone:'America/Argentina/Buenos_Aires'});
+    const estado=t.estado||'confirmado';
+    const estadoLabel=estado==='cancelado_cliente'?'Cancelado por cliente':estado.charAt(0).toUpperCase()+estado.slice(1);
+    return `<div class="turno-card" style="${compacto?'padding:8px 10px;margin-bottom:6px':''}">
+      <div class="turno-hora"><div class="h" style="font-size:13px">${horaInicio}</div><div class="m">→ ${horaFin}</div></div>
+      <div class="turno-divider color-${estado}"></div>
+      <div class="turno-info">
+        <div class="turno-nombre" style="${compacto?'font-size:13px':''}">${t.cliente_nombre}</div>
+        <div class="turno-servicio">${t.servicios?.nombre||'Servicio'}</div>
+        ${!compacto?`<div class="turno-precio">$${Number(t.servicios?.precio||0).toLocaleString('es-AR')}</div>`:''}
+        <div class="turno-tel">📱 ${t.cliente_telefono}</div>
+        <span class="badge badge-${estado}">${estadoLabel}</span>
+        <div class="turno-acciones">
+          ${estado!=='confirmado'?`<button class="btn btn-sm btn-green" onclick="cambiarEstado('${t.id}','confirmado')">Confirmar</button>`:''}
+          ${estado!=='cancelado'&&estado!=='cancelado_cliente'?`<button class="btn btn-sm btn-danger" onclick="cambiarEstado('${t.id}','cancelado')">Cancelar</button>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+async function cambiarEstado(id,estado){await db.from('turnos').update({estado}).eq('id',id);cargarTurnos();}
+
+async function cargarClientes(){
+  const {data}=await db.from('turnos').select('cliente_nombre,cliente_telefono,created_at').eq('negocio_id',NEGOCIO_ID).order('created_at',{ascending:false});
+  const cont=document.getElementById('lista-clientes');
+  if(!data||!data.length){cont.innerHTML='<p style="text-align:center;color:#aaa;padding:1rem;font-size:14px">Sin clientes aún</p>';return;}
+  const unicos={};
+  data.forEach(t=>{if(!unicos[t.cliente_telefono])unicos[t.cliente_telefono]={...t,visitas:1};else unicos[t.cliente_telefono].visitas++;});
+  cont.innerHTML=Object.values(unicos).map(c=>{
+    const ini=c.cliente_nombre.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    return `<div class="cliente-item"><div class="cliente-avatar">${ini}</div><div class="cliente-info"><div class="cliente-nombre">${c.cliente_nombre}</div><div class="cliente-datos">📱 ${c.cliente_telefono}</div></div><div class="cliente-badge">${c.visitas} ${c.visitas===1?'visita':'visitas'}</div></div>`;
+  }).join('');
+}
+
+async function cargarStats(){
+  const hoy=new Date();hoy.setHours(0,0,0,0);
+  const finHoy=new Date();finHoy.setHours(23,59,59,999);
+  const lunes=getLunes(0),mesInicio=new Date(hoy.getFullYear(),hoy.getMonth(),1);
+  const [rHoy,rSemana,rMes]=await Promise.all([
+    db.from('turnos').select('*,servicios(precio)',{count:'exact'}).eq('negocio_id',NEGOCIO_ID).gte('fecha_hora',hoy.toISOString()).lte('fecha_hora',finHoy.toISOString()),
+    db.from('turnos').select('*',{count:'exact',head:true}).eq('negocio_id',NEGOCIO_ID).gte('fecha_hora',lunes.toISOString()),
+    db.from('turnos').select('*',{count:'exact',head:true}).eq('negocio_id',NEGOCIO_ID).gte('fecha_hora',mesInicio.toISOString()),
+  ]);
+  document.getElementById('m-hoy').textContent=rHoy.count||0;
+  document.getElementById('m-semana').textContent=rSemana.count||0;
+  document.getElementById('m-mes').textContent=rMes.count||0;
+  let ingresos=0;
+  if(rHoy.data)rHoy.data.forEach(t=>{ingresos+=Number(t.servicios?.precio||0);});
+  document.getElementById('m-ingresos').textContent='$'+ingresos.toLocaleString('es-AR');
+  const {data:topData}=await db.from('turnos').select('servicios(nombre)').eq('negocio_id',NEGOCIO_ID);
+  const conteo={};
+  if(topData)topData.forEach(t=>{const n=t.servicios?.nombre;if(n)conteo[n]=(conteo[n]||0)+1;});
+  const sorted=Object.entries(conteo).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  document.getElementById('top-servicios').innerHTML=sorted.length?sorted.map(([n,c])=>`<div class="servicio-row"><span style="font-size:14px">${n}</span><span style="font-weight:700;color:#7F77DD">${c} turnos</span></div>`).join(''):'<p style="text-align:center;color:#aaa;font-size:14px;padding:1rem">Sin datos aún</p>';
+}
+
+async function cargarServiciosPanel(){
+  const {data}=await db.from('servicios').select('*').eq('activo',true).eq('negocio_id',NEGOCIO_ID);
+  const cont=document.getElementById('lista-servicios');
+  if(!data||!data.length){cont.innerHTML='<p style="text-align:center;color:#aaa;font-size:14px;padding:1rem">Sin servicios</p>';return;}
+  cont.innerHTML=data.map(s=>`<div class="servicio-row"><div><div style="font-size:14px;font-weight:700">${s.nombre}</div><div style="font-size:12px;color:#aaa">${s.duracion_minutos} min</div></div><div style="display:flex;align-items:center;gap:8px"><div class="precio-pill">$${Number(s.precio).toLocaleString('es-AR')}</div><button class="btn btn-sm btn-danger" onclick="eliminarServicio('${s.id}')">✕</button></div></div>`).join('');
+}
+async function agregarServicio(){
+  const nombre=document.getElementById('srv-nombre').value.trim(),desc=document.getElementById('srv-desc').value.trim(),dur=parseInt(document.getElementById('srv-dur').value),precio=parseFloat(document.getElementById('srv-precio').value),alerta=document.getElementById('alert-servicio');
+  if(!nombre||!dur||!precio){alerta.innerHTML='<div class="alert alert-error">Completá nombre, duración y precio.</div>';return;}
+  const {error}=await db.from('servicios').insert([{nombre,descripcion:desc,duracion_minutos:dur,precio,activo:true,negocio_id:NEGOCIO_ID}]);
+  if(error){alerta.innerHTML='<div class="alert alert-error">Error al guardar.</div>';return;}
+  alerta.innerHTML='<div class="alert alert-success">✓ Servicio agregado.</div>';
+  document.getElementById('srv-nombre').value='';document.getElementById('srv-desc').value='';document.getElementById('srv-dur').value='';document.getElementById('srv-precio').value='';
+  setTimeout(()=>{alerta.innerHTML='';cargarServiciosPanel();},1500);
+}
+async function eliminarServicio(id){if(!confirm('¿Eliminar?'))return;await db.from('servicios').update({activo:false}).eq('id',id);cargarServiciosPanel();}
+
+async function cargarEquipo(){
+  const {data}=await db.from('empleados').select('*').eq('negocio_id',NEGOCIO_ID).order('nombre');
+  const cont=document.getElementById('lista-equipo');
+  if(!data||!data.length){cont.innerHTML='<p style="text-align:center;color:#aaa;padding:1rem;font-size:14px">Sin empleados</p>';return;}
+  let html='';
+  for(const e of data){
+    const {data:horarios}=await db.from('empleado_horarios').select('*').eq('empleado_id',e.id);
+    const diasActivos=horarios?horarios.filter(h=>h.activo).map(h=>h.dia_semana):[];
+    html+=`<div style="border-bottom:1px solid #f5f5f5;padding:12px 0;">
+      <div class="cliente-item" style="padding:0;border:none;margin-bottom:10px">
+        <div class="cliente-avatar">${e.nombre.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase()}</div>
+        <div class="cliente-info"><div class="cliente-nombre">${e.nombre}</div><div class="cliente-datos">${e.telefono||''}</div></div>
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+          <span class="cliente-badge" style="${e.activo?'':'background:#FCEBEB;color:#A32D2D'}">${e.activo?'Activo':'Inactivo'}</span>
+          <button class="btn btn-sm ${e.activo?'btn-danger':'btn-green'}" onclick="toggleEmpleado('${e.id}',${e.activo})">${e.activo?'Desactivar':'Activar'}</button>
+        </div>
+      </div>
+      <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:6px">Días que trabaja</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        ${DIAS_NOMBRES.map((d,i)=>{
+          const activo=diasActivos.includes(i);
+          const hId=horarios?.find(h=>h.dia_semana===i)?.id;
+          return `<div onclick="toggleDiaEmpleado('${e.id}',${i},'${hId||''}',${activo})" style="padding:4px 8px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;background:${activo?'#7F77DD':'#f0f0f5'};color:${activo?'white':'#aaa'}">${d.slice(0,2)}</div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }
+  cont.innerHTML=html;
+}
+async function toggleDiaEmpleado(empId,dia,hId,activo){
+  if(hId&&hId!=='undefined')await db.from('empleado_horarios').update({activo:!activo}).eq('id',hId);
+  else await db.from('empleado_horarios').insert([{empleado_id:empId,dia_semana:dia,activo:true,negocio_id:NEGOCIO_ID}]);
+  cargarEquipo();
+}
+async function agregarEmpleado(){
+  const nombre=document.getElementById('eq-nombre').value.trim(),tel=document.getElementById('eq-tel').value.trim(),email=document.getElementById('eq-email').value.trim(),alerta=document.getElementById('alert-equipo');
+  if(!nombre){alerta.innerHTML='<div class="alert alert-error">El nombre es obligatorio.</div>';return;}
+  const {error}=await db.from('empleados').insert([{nombre,telefono:tel,email,activo:true,negocio_id:NEGOCIO_ID}]);
+  if(error){alerta.innerHTML='<div class="alert alert-error">Error al guardar.</div>';return;}
+  alerta.innerHTML='<div class="alert alert-success">✓ Empleado agregado.</div>';
+  document.getElementById('eq-nombre').value='';document.getElementById('eq-tel').value='';document.getElementById('eq-email').value='';
+  setTimeout(()=>{alerta.innerHTML='';cargarEquipo();},1500);
+}
+async function toggleEmpleado(id,activo){if(!confirm(activo?'¿Desactivar?':'¿Activar?'))return;await db.from('empleados').update({activo:!activo}).eq('id',id);cargarEquipo();}
+
+async function cargarBloqueados(){
+  const {data}=await db.from('dias_bloqueados').select('*,empleados(nombre)').eq('negocio_id',NEGOCIO_ID).order('fecha');
+  const cont=document.getElementById('lista-bloqueados');
+  const hoy=new Date().toISOString().split('T')[0];
+  const futuros=data?data.filter(d=>d.fecha>=hoy):[];
+  if(!futuros.length){cont.innerHTML='<p style="font-size:13px;color:#aaa">Sin días bloqueados próximos</p>';return;}
+  cont.innerHTML=futuros.map(d=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f5f5f5;">
+    <div><div style="font-size:14px;font-weight:700">${new Date(d.fecha+'T12:00:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}</div>
+    <div style="font-size:12px;color:#aaa">${d.motivo||'Sin motivo'} ${d.empleados?'· Solo '+d.empleados.nombre:'· Todo el negocio'}</div></div>
+    <button class="btn btn-sm btn-danger" onclick="eliminarBloqueo('${d.id}')">✕</button>
+  </div>`).join('');
+  const {data:emps}=await db.from('empleados').select('*').eq('activo',true).eq('negocio_id',NEGOCIO_ID);
+  const sel=document.getElementById('bl-empleado');
+  sel.innerHTML='<option value="">Todo el negocio</option>'+(emps||[]).map(e=>`<option value="${e.id}">${e.nombre}</option>`).join('');
+}
+async function agregarBloqueo(){
+  const fecha=document.getElementById('bl-fecha').value,motivo=document.getElementById('bl-motivo').value.trim(),empleado_id=document.getElementById('bl-empleado').value||null,alerta=document.getElementById('alert-bloqueo');
+  if(!fecha){alerta.innerHTML='<div class="alert alert-error">Seleccioná una fecha.</div>';return;}
+  const {error}=await db.from('dias_bloqueados').insert([{fecha,motivo,empleado_id,negocio_id:NEGOCIO_ID}]);
+  if(error){alerta.innerHTML='<div class="alert alert-error">Error al guardar.</div>';return;}
+  alerta.innerHTML='<div class="alert alert-success">✓ Día bloqueado.</div>';
+  document.getElementById('bl-fecha').value='';document.getElementById('bl-motivo').value='';
+  setTimeout(()=>{alerta.innerHTML='';cargarBloqueados();},1500);
+}
+async function eliminarBloqueo(id){if(!confirm('¿Eliminar este bloqueo?'))return;await db.from('dias_bloqueados').delete().eq('id',id);cargarBloqueados();}
+
+async function cargarConfig(){
+  const {data}=await db.from('negocio_config').select('*').eq('negocio_id',NEGOCIO_ID);
+  if(!data) return;
+  const cfg={};
+  data.forEach(r=>cfg[r.clave]=r.valor);
+  diasAbierto=cfg.dias_abierto?cfg.dias_abierto.split(',').map(Number):[0,1,2,3,4,5];
+  document.getElementById('config-inicio').value=cfg.hora_inicio||'09:00';
+  document.getElementById('config-fin').value=cfg.hora_fin||'18:00';
+  document.getElementById('config-inicio2').value=cfg.hora_inicio_2||'18:00';
+  document.getElementById('config-fin2').value=cfg.hora_fin_2||'22:00';
+  esHorarioPartido=cfg.horario_partido==='true';
+  setTipoHorario(esHorarioPartido);
+  const sel=document.getElementById('config-intervalo');
+  if(cfg.intervalo_minutos)sel.value=cfg.intervalo_minutos;
+  document.getElementById('config-whatsapp').value=cfg.whatsapp_numero||'';
+  document.getElementById('config-wamensaje').value=cfg.whatsapp_mensaje||'Hola! Me gustaría consultar sobre los turnos disponibles.';
+  renderConfigDias();
+  cargarHorariosEmpleados();
+}
+function setTipoHorario(partido){
+  esHorarioPartido=partido;
+  document.getElementById('btn-corrido').style.background=!partido?'#7F77DD':'#f0f0f5';
+  document.getElementById('btn-corrido').style.color=!partido?'white':'#aaa';
+  document.getElementById('btn-partido').style.background=partido?'#7F77DD':'#f0f0f5';
+  document.getElementById('btn-partido').style.color=partido?'white':'#aaa';
+  document.getElementById('horario-partido-fields').style.display=partido?'block':'none';
+}
+function renderConfigDias(){
+  document.getElementById('config-dias').innerHTML=DIAS_NOMBRES.map((d,i)=>`
+    <div onclick="toggleDiaConfig(${i})" style="padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;background:${diasAbierto.includes(i)?'#7F77DD':'#f0f0f5'};color:${diasAbierto.includes(i)?'white':'#aaa'}">${d.slice(0,2)}</div>
+  `).join('');
+}
+function toggleDiaConfig(dia){
+  if(diasAbierto.includes(dia))diasAbierto=diasAbierto.filter(d=>d!==dia);
+  else diasAbierto.push(dia);
+  renderConfigDias();
+}
+async function guardarConfig(){
+  const inicio=document.getElementById('config-inicio').value,fin=document.getElementById('config-fin').value;
+  const inicio2=document.getElementById('config-inicio2').value,fin2=document.getElementById('config-fin2').value;
+  const intervalo=document.getElementById('config-intervalo').value;
+  const wa=document.getElementById('config-whatsapp').value.trim();
+  const wamsg=document.getElementById('config-wamensaje').value.trim();
+  const alerta=document.getElementById('alert-config');
+  const updates=[
+    {clave:'dias_abierto',valor:diasAbierto.sort().join(',')},
+    {clave:'hora_inicio',valor:inicio},{clave:'hora_fin',valor:fin},
+    {clave:'hora_inicio_2',valor:inicio2},{clave:'hora_fin_2',valor:fin2},
+    {clave:'horario_partido',valor:esHorarioPartido.toString()},
+    {clave:'intervalo_minutos',valor:intervalo},
+    {clave:'whatsapp_numero',valor:wa},{clave:'whatsapp_mensaje',valor:wamsg}
+  ];
+  for(const u of updates) await db.from('negocio_config').upsert({clave:u.clave,valor:u.valor,negocio_id:NEGOCIO_ID},{onConflict:'clave,negocio_id'});
+  alerta.innerHTML='<div class="alert alert-success">✓ Configuración guardada.</div>';
+  setTimeout(()=>alerta.innerHTML='',2000);
+}
+
+async function cargarHorariosEmpleados(){
+  const {data:empleados}=await db.from('empleados').select('*').eq('activo',true).eq('negocio_id',NEGOCIO_ID);
+  if(!empleados||!empleados.length)return;
+  const cont=document.getElementById('horarios-empleados');
+  let html='';
+  for(const emp of empleados){
+    const {data:horarios}=await db.from('empleado_horarios').select('*').eq('empleado_id',emp.id).eq('activo',true);
+    html+=`<div style="margin-bottom:16px"><div style="font-size:14px;font-weight:700;color:#333;margin-bottom:8px">${emp.nombre}</div>
+      ${DIAS_NOMBRES.map((d,i)=>{
+        const h=horarios?.find(x=>x.dia_semana===i);
+        if(!h)return '';
+        return `<div style="display:grid;grid-template-columns:60px 1fr;gap:8px;align-items:center;margin-bottom:6px">
+          <div style="font-size:12px;font-weight:700;color:#7F77DD">${d.slice(0,2)}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <input type="time" value="${h.hora_inicio||'09:00'}" onchange="actualizarHorarioEmp('${h.id}','hora_inicio',this.value)" style="padding:6px;border:1px solid #eee;border-radius:6px;font-size:12px;width:90px">
+            <input type="time" value="${h.hora_fin||'18:00'}" onchange="actualizarHorarioEmp('${h.id}','hora_fin',this.value)" style="padding:6px;border:1px solid #eee;border-radius:6px;font-size:12px;width:90px">
+            <div onclick="toggleHorarioPartidoEmp('${h.id}',${h.horario_partido})" style="padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;background:${h.horario_partido?'#7F77DD':'#f0f0f5'};color:${h.horario_partido?'white':'#aaa'}">${h.horario_partido?'Partido':'Corrido'}</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+  cont.innerHTML=html||'<p style="color:#aaa;font-size:13px">Sin empleados activos</p>';
+}
+async function actualizarHorarioEmp(id,campo,valor){await db.from('empleado_horarios').update({[campo]:valor}).eq('id',id);}
+async function toggleHorarioPartidoEmp(id,actual){await db.from('empleado_horarios').update({horario_partido:!actual}).eq('id',id);cargarHorariosEmpleados();}
+
+async function generarCampana(){
+  const tipo=document.getElementById('ia-tipo').value;
+  const negocio=NEGOCIO_NOMBRE||'el negocio';
+  const detalle=document.getElementById('ia-detalle').value.trim();
+  const tono=document.getElementById('ia-tono').value;
+  if(!detalle){alert('Describí el detalle de la campaña.');return;}
+  const tipos={promocion:'una promoción o descuento',novedad:'una novedad o nuevo servicio',recordatorio:'un recordatorio de turno',fecha:'una fecha especial',reactivar:'reactivar clientes que no vienen hace tiempo'};
+  const tonos={amigable:'amigable, cercano y cálido',profesional:'profesional y elegante',urgente:'con sentido de urgencia',divertido:'divertido, fresco y con emojis'};
+  ultimoPrompt=`Sos un experto en marketing para negocios de belleza y estética. Generá un mensaje de WhatsApp para ${negocio} sobre ${tipos[tipo]}. Detalle: ${detalle}. El tono debe ser ${tonos[tono]}. El mensaje debe ser natural, no muy largo, listo para enviar por WhatsApp. Incluí emojis apropiados. No agregues explicaciones, solo el mensaje.`;
+  await llamarIA(ultimoPrompt);
+}
+async function generarVariante(instruccion){if(!ultimoPrompt)return;await llamarIA(ultimoPrompt+` Ahora generá una versión ${instruccion} del mismo mensaje.`);}
+async function llamarIA(prompt){
+  const btn=document.getElementById('btn-generar');
+  btn.textContent='⏳ Generando...';btn.disabled=true;
+  document.getElementById('resultado-ia').style.display='none';
+  try{
+    const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});
+    const data=await response.json();
+    document.getElementById('mensaje-generado').textContent=data.texto||'No se pudo generar el mensaje.';
+    document.getElementById('resultado-ia').style.display='block';
+    document.getElementById('copy-ok').style.display='none';
+  }catch(e){alert('Error al conectar con la IA. Intentá de nuevo.');}
+  btn.textContent='✨ Generar mensaje con IA';btn.disabled=false;
+}
+function copiarMensaje(){
+  navigator.clipboard.writeText(document.getElementById('mensaje-generado').textContent).then(()=>{
+    document.getElementById('copy-ok').style.display='block';
+    setTimeout(()=>document.getElementById('copy-ok').style.display='none',3000);
+  });
+}
+
+verificarSesion();
+</script>
+</body>
+</html>
