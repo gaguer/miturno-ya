@@ -61,13 +61,22 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
 .btn-whatsapp { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px; background: #25D366; color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; text-decoration: none; margin-top: 10px; }
 .btn-whatsapp:hover { background: #1da851; }
 .whatsapp-flotante { position: fixed; bottom: 24px; right: 24px; background: #25D366; color: white; border-radius: 50%; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; font-size: 26px; text-decoration: none; box-shadow: 0 4px 12px rgba(37,211,102,0.4); z-index: 999; }
+.btn-cancelar { width: 100%; padding: 10px; background: transparent; border: 1.5px solid #E24B4A; color: #E24B4A; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+.btn-cancelar:hover { background: #FCEBEB; }
+.turno-cliente-card { background: white; border-radius: 12px; padding: 1rem; margin-bottom: 10px; border-left: 4px solid #7F77DD; }
+.turno-cliente-card.cancelado { border-left-color: #E24B4A; opacity: 0.7; }
 </style>
 </head>
 <body>
 <div class="app">
   <div class="header">
-    <h1>📅 MiTurnoYa</h1>
-    <p>Reservá tu turno en segundos</p>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <h1>📅 MiTurnoYa</h1>
+        <p>Reservá tu turno en segundos</p>
+      </div>
+      <button onclick="abrirMisTurnos()" style="background:rgba(255,255,255,0.2);border:none;color:white;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;margin-top:4px">📋 Mis turnos</button>
+    </div>
   </div>
 
   <div id="pantalla-reserva">
@@ -130,6 +139,24 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; color: #1a1a1a; 
 </div>
 
 <a id="btn-wa-flotante" href="#" target="_blank" class="whatsapp-flotante" title="Contactar por WhatsApp">💬</a>
+
+<!-- MODAL VER MIS TURNOS -->
+<div id="modal-mis-turnos" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:998;overflow-y:auto">
+  <div style="background:#f0f0f5;min-height:100vh;max-width:480px;margin:0 auto;padding:1rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <h2 style="font-size:18px;font-weight:800">Mis turnos</h2>
+      <button onclick="cerrarMisTurnos()" style="background:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;font-weight:700">✕ Cerrar</button>
+    </div>
+    <div id="mis-turnos-buscar" style="background:white;border-radius:12px;padding:1rem;margin-bottom:12px">
+      <div style="font-size:13px;color:#888;margin-bottom:10px">Ingresá tu WhatsApp para ver tus turnos</div>
+      <div style="display:flex;gap:8px">
+        <input type="tel" id="buscar-tel" placeholder="Ej: 3512345678" style="flex:1;padding:10px 12px;border:1.5px solid #eee;border-radius:8px;font-size:14px" />
+        <button onclick="buscarMisTurnos()" style="background:#7F77DD;color:white;border:none;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer">Buscar</button>
+      </div>
+    </div>
+    <div id="mis-turnos-lista"></div>
+  </div>
+</div>
 
 <script>
 const SUPABASE_URL = 'https://qivbrddsmamxsszacjhv.supabase.co';
@@ -394,7 +421,59 @@ function reiniciar() {
   document.querySelectorAll('.servicio-card').forEach(c => c.classList.remove('selected'));
   window.scrollTo(0,0);
 }
+function abrirMisTurnos() {
+  document.getElementById('modal-mis-turnos').style.display = 'block';
+  document.getElementById('mis-turnos-lista').innerHTML = '';
+  document.getElementById('buscar-tel').value = '';
+}
 
+function cerrarMisTurnos() {
+  document.getElementById('modal-mis-turnos').style.display = 'none';
+}
+
+async function buscarMisTurnos() {
+  const tel = document.getElementById('buscar-tel').value.trim();
+  if(!tel) { alert('Ingresá tu número de WhatsApp.'); return; }
+  const cont = document.getElementById('mis-turnos-lista');
+  cont.innerHTML = '<div style="text-align:center;color:#aaa;padding:1rem;font-size:14px">Buscando...</div>';
+  const hoy = new Date().toISOString();
+  const { data } = await db.from('turnos')
+    .select('*, servicios(nombre, precio), empleados(nombre)')
+    .eq('cliente_telefono', tel)
+    .gte('fecha_hora', hoy)
+    .order('fecha_hora');
+  if(!data || !data.length) {
+    cont.innerHTML = '<div style="text-align:center;color:#aaa;padding:2rem;font-size:14px">No encontramos turnos próximos con ese número.</div>';
+    return;
+  }
+  cont.innerHTML = data.map(t => {
+    const dt = new Date(t.fecha_hora);
+    const fecha = dt.toLocaleDateString('es-AR', {weekday:'long', day:'numeric', month:'long'});
+    const hora = dt.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit', timeZone:'America/Argentina/Buenos_Aires'});
+    const cancelado = t.estado === 'cancelado' || t.estado === 'cancelado_cliente';
+    return `<div class="turno-cliente-card ${cancelado?'cancelado':''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div>
+          <div style="font-size:15px;font-weight:700">${t.servicios?.nombre||'Servicio'}</div>
+          <div style="font-size:13px;color:#888;margin-top:2px">${t.empleados?.nombre ? 'Con ' + t.empleados.nombre : ''}</div>
+        </div>
+        <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;background:${cancelado?'#FCEBEB':'#EAF3DE'};color:${cancelado?'#A32D2D':'#27500A'}">${cancelado?'Cancelado':'Confirmado'}</span>
+      </div>
+      <div style="font-size:13px;color:#555;margin-bottom:4px">📅 ${fecha}</div>
+      <div style="font-size:13px;color:#555;margin-bottom:4px">🕐 ${hora} hs</div>
+      <div style="font-size:14px;font-weight:700;color:#7F77DD">$${Number(t.servicios?.precio||0).toLocaleString('es-AR')}</div>
+      ${!cancelado ? `<button class="btn-cancelar" onclick="cancelarTurnoCliente('${t.id}')">Cancelar este turno</button>` : '<div style="font-size:12px;color:#aaa;margin-top:8px;text-align:center">Este turno fue cancelado</div>'}
+    </div>`;
+  }).join('');
+}
+
+async function cancelarTurnoCliente(id) {
+  if(!confirm('¿Seguro que querés cancelar este turno?')) return;
+  const { error } = await db.from('turnos').update({ estado: 'cancelado_cliente', cancelado_por: 'cliente' }).eq('id', id);
+  if(error) { alert('Error al cancelar. Intentá de nuevo.'); return; }
+  const tel = document.getElementById('buscar-tel').value.trim();
+  await buscarMisTurnos();
+}
 cargarConfigNegocio().then(() => cargarServicios());
 </script>
 </body>
