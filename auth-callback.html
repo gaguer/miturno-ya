@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MiTurnoYa — Conectando...</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; background: #f0f0f5; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+.card { background: white; border-radius: 16px; padding: 2.5rem; text-align: center; max-width: 380px; width: 100%; margin: 1rem; }
+.spinner { width: 48px; height: 48px; border: 4px solid #EEEDFE; border-top-color: #7F77DD; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1.5rem; }
+@keyframes spin { to { transform: rotate(360deg); } }
+h2 { font-size: 20px; font-weight: 800; color: #1a1a1a; margin-bottom: 8px; }
+p { font-size: 14px; color: #888; }
+.error { color: #E24B4A; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="spinner" id="spinner"></div>
+  <h2 id="titulo">Conectando tu cuenta...</h2>
+  <p id="subtitulo">Espera un momento mientras verificamos tu cuenta de Google.</p>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://qivbrddsmamxsszacjhv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Axj3TD_KZyVj6Aa1_8JJlg_BILyCNFS';
+const { createClient } = supabase;
+const dbAuth = createClient(SUPABASE_URL, SUPABASE_KEY);
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function procesarCallback() {
+  try {
+    // Obtener sesión de Google
+    const { data: { session }, error } = await dbAuth.auth.getSession();
+    if(error || !session) {
+      mostrarError('No se pudo verificar tu cuenta. Intentá de nuevo.');
+      return;
+    }
+
+    const email = session.user.email;
+    const nombre = session.user.user_metadata?.full_name || email.split('@')[0];
+    const googleId = session.user.id;
+
+    // Buscar si ya existe el negocio
+    const { data: negocioExiste } = await db.from('negocios').select('*').eq('email', email).single();
+
+    if(negocioExiste) {
+      // Ya existe — hacer login
+      localStorage.setItem('mty_negocio_id', negocioExiste.id);
+      localStorage.setItem('mty_negocio_slug', negocioExiste.slug);
+      localStorage.setItem('mty_negocio_nombre', negocioExiste.nombre);
+      localStorage.setItem('mty_negocio_email', negocioExiste.email);
+      document.getElementById('titulo').textContent = '¡Bienvenido de vuelta!';
+      document.getElementById('subtitulo').textContent = 'Redirigiendo a tu panel...';
+      setTimeout(() => { window.location.href = '/negocio-admin.html'; }, 1500);
+      return;
+    }
+
+    // No existe — crear negocio nuevo
+    const slug = nombre.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      + '-' + Math.random().toString(36).slice(2,6);
+
+    const { data: negocio, error: errNegocio } = await db.from('negocios').insert([{
+      nombre: nombre,
+      slug: slug,
+      email: email,
+      google_id: googleId,
+      plan: 'trial',
+      trial_hasta: new Date(Date.now() + 14*24*60*60*1000).toISOString(),
+      activo: true
+    }]).select().single();
+
+    if(errNegocio) { mostrarError('Error al crear tu cuenta.'); return; }
+
+    // Crear config inicial
+    const configs = [
+      {clave:'dias_abierto', valor:'0,1,2,3,4,5', negocio_id:negocio.id},
+      {clave:'hora_inicio', valor:'09:00', negocio_id:negocio.id},
+      {clave:'hora_fin', valor:'18:00', negocio_id:negocio.id},
+      {clave:'hora_inicio_2', valor:'18:00', negocio_id:negocio.id},
+      {clave:'hora_fin_2', valor:'22:00', negocio_id:negocio.id},
+      {clave:'horario_partido', valor:'false', negocio_id:negocio.id},
+      {clave:'intervalo_minutos', valor:'30', negocio_id:negocio.id},
+      {clave:'whatsapp_numero', valor:'', negocio_id:negocio.id},
+      {clave:'whatsapp_mensaje', valor:'Hola! Me gustaría consultar sobre los turnos disponibles.', negocio_id:negocio.id},
+      {clave:'nombre_negocio', valor:nombre, negocio_id:negocio.id}
+    ];
+    await db.from('negocio_config').insert(configs);
+
+    localStorage.setItem('mty_negocio_id', negocio.id);
+    localStorage.setItem('mty_negocio_slug', negocio.slug);
+    localStorage.setItem('mty_negocio_nombre', negocio.nombre);
+    localStorage.setItem('mty_negocio_email', negocio.email);
+
+    document.getElementById('titulo').textContent = '¡Cuenta creada!';
+    document.getElementById('subtitulo').textContent = 'Redirigiendo a tu panel...';
+    setTimeout(() => { window.location.href = '/negocio-admin.html'; }, 1500);
+
+  } catch(e) {
+    mostrarError('Ocurrió un error inesperado. Intentá de nuevo.');
+  }
+}
+
+function mostrarError(msg) {
+  document.getElementById('spinner').style.display = 'none';
+  document.getElementById('titulo').textContent = 'Algo salió mal';
+  document.getElementById('subtitulo').textContent = msg;
+  document.getElementById('subtitulo').classList.add('error');
+  setTimeout(() => { window.location.href = '/registro.html'; }, 3000);
+}
+
+procesarCallback();
+</script>
+</body>
+</html>
