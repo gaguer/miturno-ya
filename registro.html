@@ -13,9 +13,7 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; min-height: 100v
 .logo h1 { font-size: 28px; font-weight: 800; color: #7F77DD; }
 .logo p { font-size: 14px; color: #888; margin-top: 4px; }
 .card { background: white; border-radius: 16px; padding: 2rem; margin-bottom: 12px; }
-.card h2 { font-size: 18px; font-weight: 800; margin-bottom: 6px; }
-.card p { font-size: 13px; color: #888; margin-bottom: 1.5rem; }
-.tabs { display: flex; gap: 0; margin-bottom: 1.5rem; border: 1.5px solid #eee; border-radius: 10px; overflow: hidden; }
+.tabs { display: flex; margin-bottom: 1.5rem; border: 1.5px solid #eee; border-radius: 10px; overflow: hidden; }
 .tab { flex: 1; padding: 10px; text-align: center; font-size: 13px; font-weight: 700; cursor: pointer; color: #aaa; background: white; border: none; }
 .tab.active { background: #7F77DD; color: white; }
 .form-group { margin-bottom: 14px; }
@@ -50,33 +48,20 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; min-height: 100v
       <button class="tab" id="tab-login" onclick="showTab('login')">Ingresar</button>
     </div>
 
-    <!-- REGISTRO -->
     <div id="sec-registro">
-      <div class="trial-badge">
-        <span>🎉 14 días gratis — sin tarjeta de crédito</span>
-      </div>
+      <div class="trial-badge"><span>🎉 14 días gratis — sin tarjeta de crédito</span></div>
       <div id="alert-registro"></div>
       <div class="form-group">
         <label>Nombre del negocio</label>
         <input type="text" id="reg-nombre" placeholder="Ej: Salón Valentina" oninput="generarSlug()" />
         <div class="slug-preview" id="slug-preview"></div>
       </div>
-      <div class="form-group">
-        <label>Tu email</label>
-        <input type="email" id="reg-email" placeholder="tu@email.com" />
-      </div>
-      <div class="form-group">
-        <label>Contraseña</label>
-        <input type="password" id="reg-pass" placeholder="Mínimo 6 caracteres" />
-      </div>
-      <div class="form-group">
-        <label>Teléfono (opcional)</label>
-        <input type="tel" id="reg-tel" placeholder="Ej: 3512345678" />
-      </div>
+      <div class="form-group"><label>Tu email</label><input type="email" id="reg-email" placeholder="tu@email.com" /></div>
+      <div class="form-group"><label>Contraseña</label><input type="password" id="reg-pass" placeholder="Mínimo 6 caracteres" /></div>
+      <div class="form-group"><label>Teléfono (opcional)</label><input type="tel" id="reg-tel" placeholder="Ej: 3512345678" /></div>
       <button class="btn" onclick="registrar()">Crear mi cuenta gratis</button>
     </div>
 
-    <!-- LOGIN -->
     <div id="sec-login" style="display:none">
       <div id="alert-login"></div>
       <button class="btn btn-google" onclick="loginGoogle()">
@@ -84,19 +69,13 @@ body { font-family: system-ui, sans-serif; background: #f0f0f5; min-height: 100v
         Ingresar con Google
       </button>
       <div class="divider"><span>o con email</span></div>
-      <div class="form-group">
-        <label>Email</label>
-        <input type="email" id="login-email" placeholder="tu@email.com" />
-      </div>
-      <div class="form-group">
-        <label>Contraseña</label>
-        <input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()" />
-      </div>
+      <div class="form-group"><label>Email</label><input type="email" id="login-email" placeholder="tu@email.com" /></div>
+      <div class="form-group"><label>Contraseña</label><input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()" /></div>
       <button class="btn" onclick="login()">Ingresar</button>
     </div>
   </div>
 
-  <div style="text-align:center;font-size:12px;color:#aaa;padding: 0 1rem">
+  <div style="text-align:center;font-size:12px;color:#aaa;padding:0 1rem">
     Al registrarte aceptás los términos de uso. Tu información está segura.
   </div>
 </div>
@@ -108,18 +87,18 @@ const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 function showTab(tab) {
-  document.getElementById('sec-registro').style.display = tab === 'registro' ? 'block' : 'none';
-  document.getElementById('sec-login').style.display = tab === 'login' ? 'block' : 'none';
-  document.getElementById('tab-registro').classList.toggle('active', tab === 'registro');
-  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('sec-registro').style.display = tab==='registro'?'block':'none';
+  document.getElementById('sec-login').style.display = tab==='login'?'block':'none';
+  document.getElementById('tab-registro').classList.toggle('active', tab==='registro');
+  document.getElementById('tab-login').classList.toggle('active', tab==='login');
 }
 
 function generarSlug() {
   const nombre = document.getElementById('reg-nombre').value;
   const slug = nombre.toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9]+/g,'-')
+    .replace(/^-+|-+$/g,'');
   document.getElementById('slug-preview').textContent = slug ? `Tu URL: miturno-ya.vercel.app/${slug}` : '';
   return slug;
 }
@@ -132,76 +111,66 @@ async function registrar() {
   const slug = generarSlug();
   const alerta = document.getElementById('alert-registro');
 
-  if(!nombre || !email || !pass) { alerta.innerHTML = '<div class="alert alert-error">Completá nombre, email y contraseña.</div>'; return; }
-  if(pass.length < 6) { alerta.innerHTML = '<div class="alert alert-error">La contraseña debe tener al menos 6 caracteres.</div>'; return; }
-  if(!slug) { alerta.innerHTML = '<div class="alert alert-error">El nombre del negocio no es válido.</div>'; return; }
+  if(!nombre||!email||!pass){alerta.innerHTML='<div class="alert alert-error">Completá nombre, email y contraseña.</div>';return;}
+  if(pass.length<6){alerta.innerHTML='<div class="alert alert-error">La contraseña debe tener al menos 6 caracteres.</div>';return;}
+  if(!slug){alerta.innerHTML='<div class="alert alert-error">El nombre del negocio no es válido.</div>';return;}
 
-  alerta.innerHTML = '<div class="alert" style="background:#EEEDFE;color:#3C3489">Creando tu cuenta...</div>';
+  alerta.innerHTML='<div class="alert" style="background:#EEEDFE;color:#3C3489">Creando tu cuenta...</div>';
 
-  // Verificar si el slug ya existe
-  const { data: existe } = await db.from('negocios').select('id').eq('slug', slug).single();
-  if(existe) { alerta.innerHTML = '<div class="alert alert-error">Ese nombre ya está en uso. Probá con otro.</div>'; return; }
+  const {data:existe} = await db.from('negocios').select('id').eq('slug',slug).single();
+  if(existe){alerta.innerHTML='<div class="alert alert-error">Ese nombre ya está en uso. Probá con otro.</div>';return;}
 
-  // Crear el negocio
-  const { data: negocio, error } = await db.from('negocios').insert([{
-    nombre, slug, email, telefono: tel,
-    plan: 'trial',
-    trial_hasta: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-    activo: true
+  const {data:negocio, error} = await db.from('negocios').insert([{
+    nombre, slug, email, telefono:tel,
+    plan:'trial',
+    trial_hasta: new Date(Date.now()+14*24*60*60*1000).toISOString(),
+    activo:true
   }]).select().single();
 
-  if(error) { alerta.innerHTML = '<div class="alert alert-error">Error al crear la cuenta. El email puede ya estar en uso.</div>'; return; }
+  if(error){alerta.innerHTML='<div class="alert alert-error">Error al crear la cuenta. El email puede ya estar en uso.</div>';return;}
 
-  // Guardar sesión
   localStorage.setItem('mty_negocio_id', negocio.id);
   localStorage.setItem('mty_negocio_slug', negocio.slug);
   localStorage.setItem('mty_negocio_nombre', negocio.nombre);
   localStorage.setItem('mty_negocio_email', negocio.email);
 
-  // Crear config inicial
   const configs = [
-    {clave:'dias_abierto', valor:'0,1,2,3,4,5', negocio_id: negocio.id},
-    {clave:'hora_inicio', valor:'09:00', negocio_id: negocio.id},
-    {clave:'hora_fin', valor:'18:00', negocio_id: negocio.id},
-    {clave:'hora_inicio_2', valor:'18:00', negocio_id: negocio.id},
-    {clave:'hora_fin_2', valor:'22:00', negocio_id: negocio.id},
-    {clave:'horario_partido', valor:'false', negocio_id: negocio.id},
-    {clave:'intervalo_minutos', valor:'30', negocio_id: negocio.id},
-    {clave:'whatsapp_numero', valor:tel||'', negocio_id: negocio.id},
-    {clave:'whatsapp_mensaje', valor:'Hola! Me gustaría consultar sobre los turnos disponibles.', negocio_id: negocio.id},
-    {clave:'nombre_negocio', valor:nombre, negocio_id: negocio.id}
+    {clave:'dias_abierto', valor:'0,1,2,3,4,5', negocio_id:negocio.id},
+    {clave:'hora_inicio', valor:'09:00', negocio_id:negocio.id},
+    {clave:'hora_fin', valor:'18:00', negocio_id:negocio.id},
+    {clave:'hora_inicio_2', valor:'18:00', negocio_id:negocio.id},
+    {clave:'hora_fin_2', valor:'22:00', negocio_id:negocio.id},
+    {clave:'horario_partido', valor:'false', negocio_id:negocio.id},
+    {clave:'intervalo_minutos', valor:'30', negocio_id:negocio.id},
+    {clave:'whatsapp_numero', valor:tel||'', negocio_id:negocio.id},
+    {clave:'whatsapp_mensaje', valor:'Hola! Me gustaría consultar sobre los turnos disponibles.', negocio_id:negocio.id},
+    {clave:'nombre_negocio', valor:nombre, negocio_id:negocio.id}
   ];
   await db.from('negocio_config').insert(configs);
 
-  alerta.innerHTML = '<div class="alert alert-success">✓ ¡Cuenta creada! Redirigiendo...</div>';
-  setTimeout(() => { window.location.href = `/${slug}/admin.html`; }, 1500);
+  alerta.innerHTML='<div class="alert alert-success">✓ ¡Cuenta creada! Redirigiendo...</div>';
+  setTimeout(()=>{ window.location.href='/negocio-admin.html'; }, 1500);
 }
 
 async function login() {
   const email = document.getElementById('login-email').value.trim();
   const pass = document.getElementById('login-pass').value;
   const alerta = document.getElementById('alert-login');
-  if(!email || !pass) { alerta.innerHTML = '<div class="alert alert-error">Completá email y contraseña.</div>'; return; }
-
-  const { data: negocio } = await db.from('negocios').select('*').eq('email', email).single();
-  if(!negocio) { alerta.innerHTML = '<div class="alert alert-error">Email no encontrado.</div>'; return; }
-
-  // Por ahora login simple — después agregamos hash
+  if(!email||!pass){alerta.innerHTML='<div class="alert alert-error">Completá email y contraseña.</div>';return;}
+  const {data:negocio} = await db.from('negocios').select('*').eq('email',email).single();
+  if(!negocio){alerta.innerHTML='<div class="alert alert-error">Email no encontrado.</div>';return;}
   localStorage.setItem('mty_negocio_id', negocio.id);
   localStorage.setItem('mty_negocio_slug', negocio.slug);
   localStorage.setItem('mty_negocio_nombre', negocio.nombre);
   localStorage.setItem('mty_negocio_email', negocio.email);
-
-window.location.href = `/negocio-admin.html`;
+  window.location.href='/negocio-admin.html';
 }
 
 async function loginGoogle() {
   alert('Login con Google próximamente disponible.');
 }
 
-// Si ya está logueado, redirigir
-const slugGuardado = localStorage.getItem('mty_negocio_slug');
-if(localStorage.getItem('mty_negocio_id')) window.location.href = `/negocio-admin.html`;
+if(localStorage.getItem('mty_negocio_id')) window.location.href='/negocio-admin.html';
 </script>
 </body>
 </html>
