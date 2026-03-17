@@ -192,7 +192,7 @@ async function login() {
   localStorage.setItem('mty_negocio_nombre', negocio.nombre);
   localStorage.setItem('mty_negocio_email', negocio.email);
 
-  window.location.href = `/${negocio.slug}/admin.html`;
+window.location.href = `/negocio-admin.html`;
 }
 
 async function loginGoogle() {
@@ -201,7 +201,7 @@ async function loginGoogle() {
 
 // Si ya está logueado, redirigir
 const slugGuardado = localStorage.getItem('mty_negocio_slug');
-if(slugGuardado) window.location.href = `/${slugGuardado}/admin.html`;
+if(localStorage.getItem('mty_negocio_id')) window.location.href = `/negocio-admin.html`;
 </script>
 </body>
 </html>
