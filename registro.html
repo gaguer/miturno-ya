@@ -132,4 +132,76 @@ async function registrar() {
   const slug = generarSlug();
   const alerta = document.getElementById('alert-registro');
 
-  if(!nombre || !email || !pass) { alerta.innerHTML = '<div class="alert alert-error">Completá nombre, email y contraseñ
+  if(!nombre || !email || !pass) { alerta.innerHTML = '<div class="alert alert-error">Completá nombre, email y contraseña.</div>'; return; }
+  if(pass.length < 6) { alerta.innerHTML = '<div class="alert alert-error">La contraseña debe tener al menos 6 caracteres.</div>'; return; }
+  if(!slug) { alerta.innerHTML = '<div class="alert alert-error">El nombre del negocio no es válido.</div>'; return; }
+
+  alerta.innerHTML = '<div class="alert" style="background:#EEEDFE;color:#3C3489">Creando tu cuenta...</div>';
+
+  // Verificar si el slug ya existe
+  const { data: existe } = await db.from('negocios').select('id').eq('slug', slug).single();
+  if(existe) { alerta.innerHTML = '<div class="alert alert-error">Ese nombre ya está en uso. Probá con otro.</div>'; return; }
+
+  // Crear el negocio
+  const { data: negocio, error } = await db.from('negocios').insert([{
+    nombre, slug, email, telefono: tel,
+    plan: 'trial',
+    trial_hasta: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+    activo: true
+  }]).select().single();
+
+  if(error) { alerta.innerHTML = '<div class="alert alert-error">Error al crear la cuenta. El email puede ya estar en uso.</div>'; return; }
+
+  // Guardar sesión
+  localStorage.setItem('mty_negocio_id', negocio.id);
+  localStorage.setItem('mty_negocio_slug', negocio.slug);
+  localStorage.setItem('mty_negocio_nombre', negocio.nombre);
+  localStorage.setItem('mty_negocio_email', negocio.email);
+
+  // Crear config inicial
+  const configs = [
+    {clave:'dias_abierto', valor:'0,1,2,3,4,5', negocio_id: negocio.id},
+    {clave:'hora_inicio', valor:'09:00', negocio_id: negocio.id},
+    {clave:'hora_fin', valor:'18:00', negocio_id: negocio.id},
+    {clave:'hora_inicio_2', valor:'18:00', negocio_id: negocio.id},
+    {clave:'hora_fin_2', valor:'22:00', negocio_id: negocio.id},
+    {clave:'horario_partido', valor:'false', negocio_id: negocio.id},
+    {clave:'intervalo_minutos', valor:'30', negocio_id: negocio.id},
+    {clave:'whatsapp_numero', valor:tel||'', negocio_id: negocio.id},
+    {clave:'whatsapp_mensaje', valor:'Hola! Me gustaría consultar sobre los turnos disponibles.', negocio_id: negocio.id},
+    {clave:'nombre_negocio', valor:nombre, negocio_id: negocio.id}
+  ];
+  await db.from('negocio_config').insert(configs);
+
+  alerta.innerHTML = '<div class="alert alert-success">✓ ¡Cuenta creada! Redirigiendo...</div>';
+  setTimeout(() => { window.location.href = `/${slug}/admin.html`; }, 1500);
+}
+
+async function login() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const alerta = document.getElementById('alert-login');
+  if(!email || !pass) { alerta.innerHTML = '<div class="alert alert-error">Completá email y contraseña.</div>'; return; }
+
+  const { data: negocio } = await db.from('negocios').select('*').eq('email', email).single();
+  if(!negocio) { alerta.innerHTML = '<div class="alert alert-error">Email no encontrado.</div>'; return; }
+
+  // Por ahora login simple — después agregamos hash
+  localStorage.setItem('mty_negocio_id', negocio.id);
+  localStorage.setItem('mty_negocio_slug', negocio.slug);
+  localStorage.setItem('mty_negocio_nombre', negocio.nombre);
+  localStorage.setItem('mty_negocio_email', negocio.email);
+
+  window.location.href = `/${negocio.slug}/admin.html`;
+}
+
+async function loginGoogle() {
+  alert('Login con Google próximamente disponible.');
+}
+
+// Si ya está logueado, redirigir
+const slugGuardado = localStorage.getItem('mty_negocio_slug');
+if(slugGuardado) window.location.href = `/${slugGuardado}/admin.html`;
+</script>
+</body>
+</html>
