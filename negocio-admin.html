@@ -351,7 +351,19 @@ function doLogout() {
   window.location.href = '/registro.html';
 }
 
-function mostrarAdmin() {
+async function mostrarAdmin() {
+  // Verificar estado del trial
+  const { data: negocio } = await db.from('negocios').select('*').eq('id', NEGOCIO_ID).single();
+  if(negocio) {
+    const hoy = new Date();
+    const trialHasta = new Date(negocio.trial_hasta);
+    const vencido = negocio.plan === 'trial' && trialHasta <= hoy;
+    if(vencido) { mostrarTrialVencido(negocio); return; }
+    const diasRestantes = Math.ceil((trialHasta - hoy) / (1000*60*60*24));
+    if(negocio.plan === 'trial' && diasRestantes <= 3) {
+      mostrarAvisoTrial(diasRestantes);
+    }
+  }
   document.getElementById('admin-app').style.display = 'block';
   document.getElementById('admin-header').style.display = 'block';
   document.getElementById('bottom-nav').style.display = 'block';
@@ -362,6 +374,38 @@ function mostrarAdmin() {
   renderWeekStrip();
   cargarTurnos();
   cargarConfig();
+}
+
+function mostrarTrialVencido(negocio) {
+  const waMsg = encodeURIComponent(`Hola! Soy ${negocio.nombre} y quiero continuar usando MiTurnoYa. ¿Cómo activo mi cuenta?`);
+  const waUrl = `https://wa.me/5493472557025?text=${waMsg}`;
+  document.body.innerHTML = `
+    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem;background:#f0f0f5;">
+      <div style="background:white;border-radius:20px;padding:2.5rem;max-width:420px;width:100%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.08);">
+        <div style="font-size:64px;margin-bottom:1rem;">⏰</div>
+        <h2 style="font-size:22px;font-weight:800;margin-bottom:8px;color:#1a1a1a;">Tu período de prueba terminó</h2>
+        <p style="font-size:14px;color:#666;line-height:1.6;margin-bottom:1.5rem;">Esperamos que hayas disfrutado MiTurnoYa. Para continuar usando todos los beneficios, activá tu plan.</p>
+        <div style="background:#EEEDFE;border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;text-align:left;">
+          <div style="font-size:13px;font-weight:700;color:#3C3489;margin-bottom:10px;">Plan Completo — $5.000 ARS/mes</div>
+          <div style="font-size:13px;color:#534AB7;line-height:1.8;">
+            ✓ Turnos online ilimitados<br>
+            ✓ Hasta 3 empleados<br>
+            ✓ Stock, estadísticas e IA<br>
+            ✓ Soporte por WhatsApp
+          </div>
+        </div>
+        <a href="${waUrl}" target="_blank" style="display:block;background:#25D366;color:white;padding:14px;border-radius:12px;font-size:16px;font-weight:800;text-decoration:none;margin-bottom:10px;">💬 Activar por WhatsApp</a>
+        <button onclick="doLogout()" style="width:100%;padding:12px;background:transparent;border:1.5px solid #eee;border-radius:10px;font-size:14px;color:#888;cursor:pointer;">Cerrar sesión</button>
+        <p style="font-size:12px;color:#aaa;margin-top:1rem">¿Ya pagaste? Escribinos y te activamos en minutos.</p>
+      </div>
+    </div>`;
+}
+
+function mostrarAvisoTrial(dias) {
+  const aviso = document.createElement('div');
+  aviso.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#BA7517;color:white;padding:10px;text-align:center;font-size:13px;font-weight:700;z-index:9999;';
+  aviso.innerHTML = `⚠️ Tu prueba vence en ${dias} día${dias===1?'':'s'}. <a href="https://wa.me/5493472557025" target="_blank" style="color:white;text-decoration:underline;margin-left:8px">Activar ahora →</a>`;
+  document.body.appendChild(aviso);
 }
 
 function copiarURL() {
