@@ -361,6 +361,13 @@ const SUPABASE_URL = 'https://qivbrddsmamxsszacjhv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_Axj3TD_KZyVj6Aa1_8JJlg_BILyCNFS';
 const ADMIN_USER = 'admin';
 const ADMIN_PASS = 'miturno2024';
+const SLUG = 'demo';
+let NEGOCIO_ID = null;
+
+async function cargarNegocioId() {
+  const { data } = await db.from('negocios').select('id').eq('slug', SLUG).single();
+  if(data) NEGOCIO_ID = data.id;
+}
 const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -384,7 +391,8 @@ function mostrarAdmin() {
   renderWeekStrip(); cargarTurnos(); cargarConfig();
 }
 if (sessionStorage.getItem('mty_admin')) mostrarAdmin();
-
+await cargarNegocioId();
+  
 function getLunes(offset) {
   const hoy = new Date(), dia = hoy.getDay()||7, lunes = new Date(hoy);
   lunes.setDate(hoy.getDate()-dia+1+offset*7); lunes.setHours(0,0,0,0); return lunes;
