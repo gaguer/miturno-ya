@@ -167,7 +167,15 @@ async function login() {
 }
 
 async function loginGoogle() {
-  alert('Login con Google próximamente disponible.');
+  const { createClient } = supabase;
+  const dbAuth = createClient(SUPABASE_URL, SUPABASE_KEY);
+  const { error } = await dbAuth.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: 'https://miturno-ya.vercel.app/auth-callback.html'
+    }
+  });
+  if(error) alert('Error al iniciar sesión con Google: ' + error.message);
 }
 
 if(localStorage.getItem('mty_negocio_id')) window.location.href='/negocio-admin.html';
