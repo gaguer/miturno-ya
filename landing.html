@@ -56,20 +56,67 @@ section { padding: 5rem 2rem; }
 .step-desc { font-size: 14px; color: #666; line-height: 1.5; }
 .step-arrow { display: none; }
 
-/* PRICING */
-.pricing-card { background: white; border: 2px solid #7F77DD; border-radius: 20px; padding: 2.5rem; max-width: 420px; margin: 0 auto; text-align: center; box-shadow: 0 8px 32px rgba(127,119,221,0.15); }
-.pricing-badge { background: #7F77DD; color: white; font-size: 12px; font-weight: 700; padding: 4px 16px; border-radius: 20px; display: inline-block; margin-bottom: 1.5rem; }
-.pricing-nombre { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
-.pricing-precio { font-size: 48px; font-weight: 800; color: #7F77DD; line-height: 1; }
-.pricing-periodo { font-size: 14px; color: #aaa; margin-bottom: 8px; }
-.pricing-promo { font-size: 13px; color: #639922; font-weight: 700; margin-bottom: 2rem; background: #EAF3DE; padding: 6px 16px; border-radius: 8px; display: inline-block; }
-.pricing-features { text-align: left; margin-bottom: 2rem; }
-.pricing-feature { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 14px; }
-.pricing-feature:last-child { border-bottom: none; }
-.check { color: #639922; font-size: 16px; font-weight: 700; }
-.btn-pricing { width: 100%; padding: 15px; background: #7F77DD; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer; }
-.btn-pricing:hover { background: #534AB7; }
-.pricing-nota { font-size: 12px; color: #aaa; margin-top: 12px; }
+<!-- PRICING -->
+<section id="precios">
+  <div class="section-label">Precios</div>
+  <h2 class="section-title">Elegí el plan que más te conviene</h2>
+  <p class="section-sub">Sin costos ocultos. Cancelás cuando querés. Ambos planes incluyen todas las funciones.</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;max-width:700px;margin:0 auto;">
+
+    <!-- PLAN MENSUAL -->
+    <div class="pricing-card" style="position:relative;">
+      <div class="pricing-badge">🔥 Más popular</div>
+      <div class="pricing-nombre">Plan Mensual</div>
+      <div style="display:flex;align-items:baseline;justify-content:center;gap:8px;margin-bottom:4px;">
+        <div style="font-size:20px;color:#aaa;text-decoration:line-through;">$8.000</div>
+        <div class="pricing-precio">$5.000</div>
+      </div>
+      <div class="pricing-periodo">ARS / mes</div>
+      <div class="pricing-promo">✓ 37.5% OFF — Precio de lanzamiento</div>
+      <div class="pricing-features">
+        <div class="pricing-feature"><span class="check">✓</span> Turnos online ilimitados</div>
+        <div class="pricing-feature"><span class="check">✓</span> Hasta 3 empleados / profesionales</div>
+        <div class="pricing-feature"><span class="check">✓</span> Control de stock con QR</div>
+        <div class="pricing-feature"><span class="check">✓</span> Estadísticas del negocio</div>
+        <div class="pricing-feature"><span class="check">✓</span> Campañas con IA</div>
+        <div class="pricing-feature"><span class="check">✓</span> Horarios flexibles y días bloqueados</div>
+        <div class="pricing-feature"><span class="check">✓</span> Funciona en celular y computadora</div>
+        <div class="pricing-feature"><span class="check">✓</span> Soporte por WhatsApp</div>
+      </div>
+      <a href="https://wa.me/5493472557025?text=${encodeURIComponent('Hola! Quiero contratar el Plan Mensual de MiTurnoYa por $5.000/mes. ¿Cómo sigo?')}">
+        <button class="btn-pricing">Contratar plan mensual</button>
+      </a>
+      <div class="pricing-nota">Renovación mensual. Cancelás cuando querés.</div>
+    </div>
+
+    <!-- PLAN ANUAL -->
+    <div class="pricing-card" style="border-color:#639922;position:relative;">
+      <div class="pricing-badge" style="background:#639922;">⭐ Mejor precio</div>
+      <div class="pricing-nombre">Plan Anual</div>
+      <div style="display:flex;align-items:baseline;justify-content:center;gap:8px;margin-bottom:4px;">
+        <div style="font-size:20px;color:#aaa;text-decoration:line-through;">$96.000</div>
+        <div class="pricing-precio" style="color:#639922;">$57.600</div>
+      </div>
+      <div class="pricing-periodo">ARS / año <span style="font-size:12px;color:#639922;font-weight:700;">($4.800/mes)</span></div>
+      <div class="pricing-promo" style="background:#EAF3DE;color:#27500A;">✓ 40% OFF — Pagás todo el año y ahorrás $38.400</div>
+      <div class="pricing-features">
+        <div class="pricing-feature"><span class="check">✓</span> Turnos online ilimitados</div>
+        <div class="pricing-feature"><span class="check">✓</span> Hasta 3 empleados / profesionales</div>
+        <div class="pricing-feature"><span class="check">✓</span> Control de stock con QR</div>
+        <div class="pricing-feature"><span class="check">✓</span> Estadísticas del negocio</div>
+        <div class="pricing-feature"><span class="check">✓</span> Campañas con IA</div>
+        <div class="pricing-feature"><span class="check">✓</span> Horarios flexibles y días bloqueados</div>
+        <div class="pricing-feature"><span class="check">✓</span> Funciona en celular y computadora</div>
+        <div class="pricing-feature"><span class="check">✓</span> Soporte por WhatsApp</div>
+      </div>
+      <a href="https://wa.me/5493472557025?text=${encodeURIComponent('Hola! Quiero contratar el Plan Anual de MiTurnoYa por $57.600/año. ¿Cómo sigo?')}">
+        <button class="btn-pricing" style="background:#639922;">Contratar plan anual</button>
+      </a>
+      <div class="pricing-nota">Pago único anual. La mejor inversión para tu negocio.</div>
+    </div>
+
+  </div>
+</section>
 
 /* TESTIMONIOS */
 .testimonios { background: #f8f8fc; }
@@ -117,7 +164,7 @@ footer a { color: #7F77DD; }
     <a href="#funciones">Funciones</a>
     <a href="#precios">Precios</a>
     <a href="#faq">FAQ</a>
-    <a href="/registro.html" class="btn-nav">Empezar gratis</a>
+    <a href="#precios" class="btn-nav">Ver precios</a>
   </div>
 </nav>
 
@@ -127,7 +174,7 @@ footer a { color: #7F77DD; }
   <h1>El sistema de turnos que tu negocio <span>necesitaba</span></h1>
   <p>Tus clientes reservan online, vos gestionás todo desde el celular. Sin papeles, sin llamadas, sin quilombos.</p>
   <div class="hero-btns">
-    <a href="/registro.html"><button class="btn-primary">Probarlo gratis 14 días</button></a>
+    <a href="#precios"><button class="btn-primary">Ver planes y precios</button></a>
     <a href="/demo/index.html" target="_blank"><button class="btn-secondary">Ver demo en vivo →</button></a>
   </div>
   <div class="hero-stats">
@@ -317,7 +364,7 @@ footer a { color: #7F77DD; }
   <h2>¿Listo para modernizar tu negocio?</h2>
   <p>Empezá gratis hoy. Sin tarjeta de crédito. Sin compromisos.</p>
   <div class="hero-btns">
-    <a href="/registro.html"><button class="btn-primary">Crear mi cuenta gratis</button></a>
+    <a href="https://wa.me/5493472557025?text=Hola!%20Quiero%20contratar%20MiTurnoYa.%20%C2%BFC%C3%B3mo%20sigo%3F"><button class="btn-primary">Contratar ahora</button></a>
     <a href="/demo/index.html" target="_blank"><button class="btn-secondary">Ver demo primero →</button></a>
   </div>
 </div>
