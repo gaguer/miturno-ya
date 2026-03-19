@@ -491,6 +491,7 @@ function renderTurnosList(turnos,compacto=false){
         <div class="turno-acciones">
           ${estado!=='confirmado'?`<button class="btn btn-sm btn-green" onclick="cambiarEstado('${t.id}','confirmado')">Confirmar</button>`:''}
           ${estado!=='cancelado'&&estado!=='cancelado_cliente'?`<button class="btn btn-sm btn-danger" onclick="cambiarEstado('${t.id}','cancelado')">Cancelar</button>`:''}
+          ${estado==='confirmado'&&t.cliente_telefono?`<a href="${generarLinkRecordatorio(t)}" target="_blank"><button class="btn btn-sm" style="background:#25D366;color:white;border:none;cursor:pointer">💬 Recordar</button></a>`:''}
         </div>
       </div>
     </div>`;
@@ -735,7 +736,19 @@ function copiarMensaje(){
     setTimeout(()=>document.getElementById('copy-ok').style.display='none',3000);
   });
 }
-
+function generarLinkRecordatorio(t) {
+  const nombre = t.cliente_nombre;
+  const servicio = t.servicios?.nombre || 'tu servicio';
+  const dt = new Date(t.fecha_hora);
+  const fecha = dt.toLocaleDateString('es-AR', {weekday:'long', day:'numeric', month:'long'});
+  const hora = dt.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit', timeZone:'America/Argentina/Buenos_Aires'});
+  const negocio = NEGOCIO_NOMBRE || 'el negocio';
+  const msg = encodeURIComponent(`Hola ${nombre}! 👋 Te recordamos que tenés turno de ${servicio} el ${fecha} a las ${hora}hs en ${negocio}. ¡Te esperamos! 😊`);
+  const tel = t.cliente_telefono.replace(/\D/g,'');
+  const telFormateado = tel.startsWith('54') ? tel : '54' + tel;
+  return `https://wa.me/${telFormateado}?text=${msg}`;
+}
+  
 verificarSesion();
 </script>
 </body>
