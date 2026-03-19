@@ -743,7 +743,7 @@ function generarLinkRecordatorio(t) {
   const fecha = dt.toLocaleDateString('es-AR', {weekday:'long', day:'numeric', month:'long'});
   const hora = dt.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit', timeZone:'America/Argentina/Buenos_Aires'});
   const negocio = NEGOCIO_NOMBRE || 'el negocio';
-  const msg = encodeURIComponent(`Hola ${nombre}! 👋 Te recordamos que tenés turno de ${servicio} el ${fecha} a las ${hora}hs en ${negocio}. ¡Te esperamos! 😊`);
+  const msg = encodeURIComponent(`Hola ${nombre}! Te recordamos que tenes turno de ${servicio} el ${fecha} a las ${hora}hs en ${negocio}. Te esperamos!`);
   const tel = t.cliente_telefono.replace(/\D/g,'');
   const telFormateado = tel.startsWith('54') ? tel : '54' + tel;
   return `https://wa.me/${telFormateado}?text=${msg}`;
